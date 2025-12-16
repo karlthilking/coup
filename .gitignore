@@ -1,0 +1,10 @@
+build/
+out/
+
+*.o
+*.obj
+*.so
+*.a
+
+.DS_Store
+
