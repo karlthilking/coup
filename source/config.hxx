@@ -1,16 +1,8 @@
 #pragma once
 
 #if defined(_MSC_VER)
-	#define COMPILER "MSVC"
 	#define CPP_VERSION _MSVC_LANG
-#elif defined(__GNUC__) && !defined(__clang__)
-	#define COMPILER "g++"
-	#define CPP_VERSION __cplusplus
-#elif defined(__clang__)
-	#define COMPILER "clang++"
-	#define CPP_VERSION __cplusplus
 #else
-	#define COMPILER "unknown"
 	#define CPP_VERSION __cplusplus
 #endif
 
@@ -29,3 +21,4 @@
 #else
 	#define CPP "c++"
 #endif
+
