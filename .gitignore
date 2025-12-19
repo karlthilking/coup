@@ -6,5 +6,7 @@ out/
 *.so
 *.a
 
+*.swp
+
 .DS_Store
 
