@@ -25,15 +25,39 @@ namespace coup {
 
 	class clean_command {
 	public:
-		bool execute() { return true; }
+		bool execute(const std::vector< std::string >& source_files)
+		{ 
+			return true;
+		}
 	};
 
 	
 	using command = std::variant< run_command, build_command, clean_command >;
 	
-	bool execute(const command& cmd)
+	bool execute(const command& cmd, const std::vector< std::string >& args)
 	{
-		std::visit([](const auto& c){ c.execute(); }, cmd);
+		std::visit([&args](const auto& c){ return c.execute(args); }, cmd);
+	}
+	
+	command create_command(const char* cmd)
+	{
+		if(cmd == "build")
+		{
+			return build_command{};
+		}
+		else if(cmd == "run")
+		{
+			return run_command{};
+		}
+		else if(cmd == "clean")
+		{
+			return clean_command{};
+		}
+		else
+		{
+			print_usage();
+			std::cerr << "Invalid command used\n";
+		}
 	}
 
 }

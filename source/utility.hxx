@@ -17,6 +17,14 @@ namespace coup {
 		return result;
 	}
 
+	void print_usage()
+	{
+		std::cout <<
+			"To build your project use [ coup build <source1> <source2> ... ]\n
+			 To run your project use [ coup run <source1> <source2> ... ]\n
+			 To clean your project use [ coup clean <source1> <source2> ...]\n";
+	}
+
 	std::string create_compile_command(const std::string& source_file)
 	{
 		std::string compile_cmd("g++ -std=");

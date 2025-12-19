@@ -3,38 +3,36 @@
 #include <iostream>
 #include <algorithm>
 
-#include "core/compiler.hxx"
+#include "utility.hxx" // print_usage
+#include "commands.hxx" // build_command, run_command, clean_command, command, execute
+												// create_command
+
 using namespace coup;
 
 int main(int argc, char** argv)
 {
-	if(argc < 2)
+	if(argv < 2)
 	{
+		print_usage();
 		return 1;
 	}
-	const std::string& command(argv[1]);
-	std::vector<std::string> src_files;
 
-	for(int i{2}; i < argc; ++i)
-	{
-		src_files.emplace_back(argv[i]);
-	}
+	const char* cmd = argv[2];
+	std::vector< std::string > args;
 
-	compiler cmp;
+	for(int i{3}; i < argc; ++i)
+	{
+		args.emplace_back(argv[i]);
+	}
+	
+	command exec_cmd = create_command(cmd);
 
-	if(command == "build")
+	bool success = execute(exec_cmd, args);
+
+	if(!success)
 	{
-		bool result = cmp.build(src_files);
-		if(result) { return 1; }
-	}
-	else if(command == "run")
-	{
-		bool result = cmp.run(src_files);
-		if(result) { return 1; }
-	}
-	else 
-	{
-		std::cerr << "Unknown command\n";
+		std::cerr << "Error executing command: " << command << "\n";
+		return 1;
 	}
 
 	return 0;
