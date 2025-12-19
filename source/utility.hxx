@@ -6,20 +6,15 @@
 #include <vector>
 #include <iostream> // std::cout std::cerr
 
-#include "config.hxx"
+#include "config.hxx" // CPP macro
 
 namespace coup {
-	static constinit const char* cpp_version = CPP;
+	constinit static const char* cpp_version = CPP; // c++17, c++20, etc
 
 	int exec_sys_call(const std::string& command)
 	{
 		int result = std::system(command.c_str());
 		return result;
-	}
-	
-	std::string source_to_object(const std::string& source_file)
-	{
-		return source_file.substr(0, source_file.length() - 4) + ".o";
 	}
 
 	std::string create_compile_command(const std::string& source_file)
@@ -45,6 +40,14 @@ namespace coup {
 	}
 
 	std::string create_run_command() { return std::string("./program"); }
+	
+	void convert_to_object_files(std::vector< std::string >& source_files);
+	{
+		for(std::string& src: source_files)
+		{
+			src = src.substr(0, src.length() - 4) + ".o";
+		}
+	}
 
 	bool compile(const std::vector< std::string >& source_files)
 	{
@@ -88,17 +91,10 @@ namespace coup {
 	{
 		bool compilation_result = compile(source_files);
 		assert(compilation_result == true);
+	
+		convert_to_object_files(source_files);
 
-		std::vector< std::string > object_files;
-		
-		for(const std::string& src: source_files)
-		{
-			std::string obj(src.substr(0, src.length() - 4));
-			obj += ".o";
-			object_files.push_back(obj);
-		}
-
-		bool link_result = link(object_files);
+		bool link_result = link(source_files); // source files now object files
 		assert(link_result == true);
 		
 		std::cout << "Built all source files successfully\n";
