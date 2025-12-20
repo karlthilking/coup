@@ -1,10 +1,10 @@
 #include <string>
 #include <optional>
-
+#include <string_view>
 
 namespace coup {
 	
-	std::optional< std::string > extract_header(const std::string& line) 
+	std::optional< std::string_view > extract_header(std::string_view line) 
 	{
 		if(line.empty()) { return {}; }
 		if(line.find("#include") == line.end()) { return {}; }
