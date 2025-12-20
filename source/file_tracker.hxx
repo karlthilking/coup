@@ -1,4 +1,5 @@
-#include <filesystem>
+#include <filesystem> // path, last_write_time
+#include <fstream> // ifstream
 #include <vector>
 
 using fs = std::filesystem; 
@@ -10,7 +11,18 @@ private:
 	bool topo_sorted = false;
 public:
 	
-	std::vector< fs::path > get_dependencies;
+	std::vector< fs::path > get_dependencies(const fs::path pth)
+	{
+		assert(!pth.empty());
+
+		std::ifstream input(pth);
+		std::string line;
+
+		while(std::getline(input, line))
+		{
+
+
+	}
 
 	void build_file_adj_list() noexcept
 	{
