@@ -28,7 +28,7 @@ TEST_F(file_tracker_test, test_root)
 	EXPECT_FALSE(root.empty());
 	EXPECT_TRUE(fs::exists(root));
 
-	std::cout << "Root Path: " << root.c_str() << "\n";
+	std::cout << "Root path: " << root.string() << "\n";
 }
 
 TEST_F(file_tracker_test, test_source_files)
@@ -37,8 +37,10 @@ TEST_F(file_tracker_test, test_source_files)
 
 	EXPECT_FALSE(src_files.empty());
 	
+	std::cout << "Source files:\n";
 	for(const auto& src: src_files)
 	{
+		std::cout << src.string() << "\n";
 		EXPECT_FALSE(src.empty());
 		EXPECT_TRUE(fs::exists(src));
 	}
@@ -47,10 +49,13 @@ TEST_F(file_tracker_test, test_source_files)
 TEST_F(file_tracker_test, test_header_files)
 {
 	std::vector< fs::path > header_files = ft.get_header_files();
-
+	
+	std::cout << "Header files:\n";
 	EXPECT_FALSE(header_files.empty());
 	for(const auto& header: header_files)
 	{
+		std::cout << header.string() << "\n";
+
 		EXPECT_FALSE(header.empty());
 		EXPECT_TRUE(fs::exists(header));
 	}
