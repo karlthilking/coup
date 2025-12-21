@@ -25,37 +25,27 @@ protected:
 };
 
 TEST_F(parser_test, get_stem_cpp) {	EXPECT_EQ(get_stem(s1), "main");}
-
 TEST_F(parser_test, get_stem_cxx) {	EXPECT_EQ(get_stem(s2), "test");}
-
 TEST_F(parser_test, get_stem_cplusplus) {	EXPECT_EQ(get_stem(s6), "file");}
-
 TEST_F(parser_test, get_stem_cc) { EXPECT_EQ(get_stem(s7), "file");}
-
 TEST_F(parser_test, get_stem_C) { EXPECT_EQ(get_stem(s8), "file");}
-
 TEST_F(parser_test, get_stem_hxx) {	EXPECT_EQ(get_stem(s3), "utils");}
-
 TEST_F(parser_test, get_stem_h) {	EXPECT_EQ(get_stem(s4), "math");}
-
 TEST_F(parser_test, get_stem_hpp) {	EXPECT_EQ(get_stem(s5), "file");}
-
 TEST_F(parser_test, get_stem_hh) { EXPECT_EQ(get_stem(s9), "file");}
 
 TEST_F(parser_test, get_ext_cpp) { EXPECT_EQ(get_extension(s1), "cpp");}
-
 TEST_F(parser_test, get_ext_cxx) { EXPECT_EQ(get_extension(s2), "cxx");}
-
 TEST_F(parser_test, get_ext_cplusplus) { EXPECT_EQ(get_extension(s6), "c++");}
-
 TEST_F(parser_test, get_ext_cc) { EXPECT_EQ(get_extension(s7), "cc");}
-
 TEST_F(parser_test, get_ext_C) { EXPECT_EQ(get_extension(s8), "C");}
-
 TEST_F(parser_test, get_ext_hxx) { EXPECT_EQ(get_extension(s3), "hxx");}
-
 TEST_F(parser_test, get_ext_h) { EXPECT_EQ(get_extension(s4), "h");}
-
 TEST_F(parser_test, get_ext_hpp) { EXPECT_EQ(get_extension(s5), "hpp");}
-
 TEST_F(parser_test, get_ext_hh) { EXPECT_EQ(get_extension(s9), "hh");}
+
+TEST_F(parser_test, get_obj_cpp) { EXPECT_EQ(get_obj_file(s1), "main.o");}
+TEST_F(parser_test, get_obj_cxx) { EXPECT_EQ(get_obj_file(s2), "test.o");}
+TEST_F(parser_test, get_obj_cplusplus) { EXPECT_EQ(get_obj_file(s6), "file.o");}
+TEST_F(parser_test, get_obj_cc) { EXPECT_EQ(get_obj_file(s7), "file.o");}
+TEST_F(parser_test, get_obj_C) { EXPECT_EQ(get_obj_file(s8), "file.o");}
