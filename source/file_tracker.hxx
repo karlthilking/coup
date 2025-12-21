@@ -1,8 +1,10 @@
-#include <filesystem> // path, last_write_time
+#include <filesystem> // path, last_write_time, current_path, parent_path, exists
 #include <fstream> // ifstream
 #include <vector>
 #include <string_view>
 #include <optional>
+#include <cassert> // assert
+#include <stdexcept> // runtime_error
 
 #include "regex.hpp" // extract_header
 
@@ -13,38 +15,89 @@ namespace coup {
 	class file_tracker {
 
 	private:
-		std::vector< fs::path > file_paths;
-		
-		bool update()
+		fs::path root_path;
+		std::vector< fs::path > source_files;
+		std::vector< fs::path > header_files;
+	
+		std::optional< fs::path > get_root(fs::path p = fs::current_path())
 		{
-			assert(!file_paths.empty());
-		}
+			fs::path current = fs::absolute(p);
+			assert(fs::exists(current));
 
-		std::string_view remove_extension(std::string_view filename)
-		{
-			size_t extension_pos = filename.rfind('.');
-			assert(extension_pos != std::string_view::npos);
-
-			return filename.substr(0, extension_pos);
-		}
-
-		std::optional< fs::path > get_source(std::string_view header)
-		{
-			std::string_view h_name = remove_extension(header);
-
-			for(const auto& entry: file_paths)
+			do
 			{
-				std::string full = entry.path().filename().string();
-				if(full == header) { continue; }
+				if(fs::exists(current / "src") || fs::exists(current / "source"))
+				{
+					return current;
+				}
+				current = current.parent_path();
+			} while(current.parent_path() != current);
 
-				std::string_view f_name = remove_extension(full);
-				if(f_name == h_name) { return entry; }
-			}
 			return std::nullopt;
 		}
 
+		std::string_view get_stem(std::string_view file) const noexcept
+		{
+			size_t dot_pos = file.rfind('.');
+			assert(dot_pos != filepath.end());
+
+			return file.substr(0, dot_pos);
+		}
+
+		std::string_view get_extension(std::string_view filepath) const noexcept
+		{
+			size_t dot_pos = filepath.rfind('.');
+			assert(dot_pos != std::string_view::npos);
+
+			return filepath.substr(dot_pos + 1);
+		}
+
+		bool is_source_file(std::string_view file_ext) const noexcept
+		{
+			if(file_ext == "cpp" || file_ext == "cc" || file_ext == "cxx")
+			{
+				return true;
+			}
+			return false;
+		}
+
+		bool is_header_file(std::string_view file_ext) const noexcept
+		{
+			if(file_ext == "h" || file_ext == "hpp" || file_ext == "hxx")
+			{
+				return true;
+			}
+			return false;
+		}
+
+		void initialize_files() noexcept
+		{
+			assert(fs::exists(root_path) && !root_path.empty());
+		
+			for(const auto& entry: fs::recursive_directory_iterator(root_path))
+			{
+				if(!entry.is_regular_file()) { continue; }
+
+				std::string ext = get_extension(entry.path().c_str());
+				if(is_source_file(ext)) { source_files.push_back(entry); }
+				if(is_header_file(ext)) { header_files.push_back(entry); }
+			}
+		}	
+
 	public:
-	
+		file_tracker() 
+		{
+			std::optional< fs::path > root = get_root();
+			
+			if(!root.has_value())
+			{
+				throw std::runtime_error("Could not identify a root directory\n");
+			}
+
+			root_path = root.value();
+			initialize_files();
+		}
+
 		std::vector< fs::path > get_dependencies(const fs::path& pth)
 		{
 			std::vector< fs::path > dependencies;
