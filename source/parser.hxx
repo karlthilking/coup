@@ -4,10 +4,11 @@
 #include <vector>
 #include <string_view>
 #include <cassert>
+#include <optional>
 
 namespace coup
 {
-	std::string get_obj_file(std::string_view src)
+	inline std::string get_obj_file(std::string_view src)
 	{
 		size_t dot_pos = src.rfind('.');
 		assert(dot_pos != std::string_view::npos);
@@ -18,7 +19,7 @@ namespace coup
 		return obj;
 	}
 
-	std::vector< std::string > get_obj_files(const std::vector< std::string >& src_files)
+	inline std::vector< std::string > get_obj_files(const std::vector< std::string >& src_files)
 	{
 		std::vector< std::string > obj_files(src_files.size());
 	
@@ -29,20 +30,26 @@ namespace coup
 		return obj_files;
 	}
 
-	std::string_view get_stem(std::string_view file)
+	inline std::optional< std::string_view > get_stem(std::string_view file)
 	{
+		if(file.empty()) { return std::nullopt;}
 		size_t dot_pos = file.rfind('.');
-		assert(!file.empty());
-		assert(dot_pos != std::string_view::npos);
+
+		if(dot_pos == 0) { return std::nullopt;}
+		if(dot_pos == std::string_view::npos) { return file;}
 
 		return file.substr(0, dot_pos);
 	}
 
-	std::string_view get_extension(std::string_view file)
+	inline std::optional< std::string_view > get_extension(std::string_view file)
 	{
+		if(file.empty()) { return std::nullopt;}
 		size_t dot_pos = file.rfind('.');
-		assert(!file.empty());
-		assert(dot_pos != std::string_view::npos);
+
+		if(dot_pos == std::string_view::npos || dot_pos == file.length() - 1)
+		{
+			return std::nullopt;
+		}
 
 		return file.substr(dot_pos + 1);
 	}

@@ -63,10 +63,13 @@ namespace coup {
 		
 			for(const auto& entry: fs::recursive_directory_iterator(root_path))
 			{
-				if(!entry.is_regular_file()) { continue; }
+				if(!entry.is_regular_file()) { continue;}
 				
 				std::string filename = entry.path().string();
-				std::string_view ext = get_extension(filename);
+				std::optional< std::string_view > ex = get_extension(filename);
+
+				if(!ex.has_value()) { continue;}
+				std::string_view ext = ex.value();
 
 				if(is_source_file(ext)) { source_files.push_back(entry);}
 				if(is_header_file(ext)) { header_files.push_back(entry);}
@@ -88,6 +91,16 @@ namespace coup {
 		}
 		
 		fs::path get_root() const noexcept { return root_path; }
+		
+		std::vector< fs::path > get_source_files() const noexcept
+		{
+			return source_files;
+		}
+
+		std::vector< fs::path > get_header_files() const noexcept
+		{
+			return header_files;
+		}
 
 		/*
 		std::vector< fs::path > get_dependencies(const fs::path& pth)
