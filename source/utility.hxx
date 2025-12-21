@@ -1,15 +1,17 @@
 #pragma once
 
+#include <string_view>
 #include <cstdlib> // std::system 
 #include <cassert> // assert
 #include <string>
 #include <vector>
 #include <iostream> // std::cout std::cerr
 
-#include "parse.hxx" // convert_to_obj_file(s)
+#include "parser.hxx" // convert_to_obj_file(s)
 #include "config.hxx" // CPP macro
 
 namespace coup {
+
 	constinit static const char* cpp_version = CPP; // c++17, c++20, etc
 
 	int exec_sys_call(const std::string& command)
@@ -20,23 +22,25 @@ namespace coup {
 
 	void print_usage()
 	{
-		std::cout <<
-			"To build your project use [ coup build <source1> <source2> ... ]\n
-			 To run your project use [ coup run <source1> <source2> ... ]\n
-			 To clean your project use [ coup clean <source1> <source2> ...]\n";
+		std::cout << "To run use coup run\n"
+			<< "To build use coup build\n"
+			<< "To clean use coup clean\n";
 	}
 
-	std::string create_compile_command(const std::string& source_file)
+	std::string create_compile_command(std::string_view source_file)
 	{
-		std::string compile_cmd("g++ -std=");
-		compile_cmd += cpp_version + " -c " + source_file + " -o ";
-		compile_cmd += convert_to_obj_file(source_file);
+		std::string compile_cmd = "g++ -std=";
+		compile_cmd += cpp_version;
+		compile_cmd += " -c ";
+		compile_cmd += source_file;
+		compile_cmd += " -o ";
+		compile_cmd += get_obj_file(source_file);
 		return compile_cmd;
 	}
 	
 	std::string create_link_command(const std::vector< std::string >& object_files)
 	{
-		std::string link_cmd("g++ -std=");
+		std::string link_cmd = "g++ -std=";
 		link_cmd += cpp_version;
 
 		for(const std::string& obj: object_files)
@@ -48,7 +52,7 @@ namespace coup {
 		return link_cmd;
 	}
 
-	std::string create_run_command() { return std::string("./program"); }
+	std::string create_run_command() { return "./program"; }
 
 	bool compile(const std::vector< std::string >& source_files)
 	{
@@ -93,9 +97,9 @@ namespace coup {
 		bool compilation_result = compile(source_files);
 		assert(compilation_result == true);
 	
-		convert_to_obj_files(source_files);
+		std::vector< std::string > obj_files = get_obj_files(source_files);
 
-		bool link_result = link(source_files); // source files now object files
+		bool link_result = link(obj_files); 
 		assert(link_result == true);
 		
 		std::cout << "Built all source files successfully\n";
