@@ -5,6 +5,7 @@
 #include <type_traits> // is_same_v
 #include <stdexcept> // runtime_error
 #include <cassert> // assert
+#include <string_view>
 
 #include "utility.hxx" // build(), run(), clean()
 
@@ -28,7 +29,7 @@ namespace coup {
 
 	class clean_command {
 	public:
-		bool execute(const std::vector< std::string >& source_files) const noexcept
+		bool execute([[maybe_unused]] const std::vector< std::string >& source_files) const noexcept
 		{ 
 			return true;
 		}
@@ -45,7 +46,7 @@ namespace coup {
 		}, cmd);
 	}
 
-	command_type create_command(const char* cmd)
+	command_type create_command(std::string_view cmd)
 	{
 		if(cmd == "build")
 		{

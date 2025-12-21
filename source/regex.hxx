@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 #include <optional>
 #include <string_view>
@@ -10,7 +12,7 @@ namespace coup {
 	std::optional< std::string_view > extract_header(std::string_view line) 
 	{
 		if(line.empty()) { return {}; }
-		if(line.find("#include") == line.end()) { return {}; }
+		if(line.find("#include") == std::string_view::npos) { return {}; }
 
 		size_t l = line.find('"') + 1;
 		if(l == std::string::npos) { return {}; }

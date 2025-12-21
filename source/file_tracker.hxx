@@ -1,3 +1,5 @@
+#pragma once
+
 #include <filesystem> // path, last_write_time, current_path, parent_path, exists
 #include <fstream> // ifstream
 #include <vector>
@@ -6,10 +8,10 @@
 #include <cassert> // assert
 #include <stdexcept> // runtime_error
 
-#include "regex.hpp" // extract_header
+#include "regex.hxx" // extract_header
 #include "parser.hxx" // get_stem, get_extension
 
-using fs = std::filesystem; 
+namespace fs = std::filesystem; 
 
 namespace coup {
 
@@ -20,7 +22,7 @@ namespace coup {
 		std::vector< fs::path > source_files;
 		std::vector< fs::path > header_files;
 	
-		std::optional< fs::path > get_root(fs::path p = fs::current_path())
+		std::optional< fs::path > find_root(fs::path p = fs::current_path())
 		{
 			fs::path current = fs::absolute(p);
 			assert(fs::exists(current));
@@ -62,17 +64,19 @@ namespace coup {
 			for(const auto& entry: fs::recursive_directory_iterator(root_path))
 			{
 				if(!entry.is_regular_file()) { continue; }
+				
+				std::string filename = entry.path().string();
+				std::string_view ext = get_extension(filename);
 
-				std::string ext = get_extension(entry.path().c_str());
-				if(is_source_file(ext)) { source_files.push_back(entry); }
-				if(is_header_file(ext)) { header_files.push_back(entry); }
+				if(is_source_file(ext)) { source_files.push_back(entry);}
+				if(is_header_file(ext)) { header_files.push_back(entry);}
 			}
 		}	
 
 	public:
 		file_tracker() 
 		{
-			std::optional< fs::path > root = get_root();
+			std::optional< fs::path > root = find_root();
 			
 			if(!root.has_value())
 			{
@@ -82,7 +86,10 @@ namespace coup {
 			root_path = root.value();
 			initialize_files();
 		}
+		
+		fs::path get_root() const noexcept { return root_path; }
 
+		/*
 		std::vector< fs::path > get_dependencies(const fs::path& pth)
 		{
 			std::vector< fs::path > dependencies;
@@ -98,10 +105,11 @@ namespace coup {
 					if(src.has_value()) { dependencies.push_back(src.value()); }
 				}
 			}
-			if(dependencies.empty()) { return {}; }
-			else return dependencies;
+			if(dependencies.empty()) { return {};}
+			else { return dependencies;}
 		}
-
+		
+		
 		void build_file_adj_list() noexcept
 		{
 		
@@ -109,7 +117,6 @@ namespace coup {
 
 		void topological_sort_files() noexcept
 		{
-			std::unordered_map< fs::path, int > file_dependencies;
 		}
 	
 		std::vector< fs::path > get_requires_recompilation() const noexcept
@@ -119,7 +126,7 @@ namespace coup {
 
 		fs::file_time_type get_last_update(const fs::path& pth) const noexcept
 		{
-			return fs::last_write_time(pth);
 		}
-	}
+		*/
+	};
 }
