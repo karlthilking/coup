@@ -2,6 +2,9 @@
 
 #include <variant> // variant, visit
 #include <utility> // move
+#include <type_traits> // is_same_v
+#include <stdexcept> // runtime_error
+#include <cassert> // assert
 
 #include "utility.hxx" // build(), run(), clean()
 
@@ -9,7 +12,7 @@ namespace coup {
 	
 	class build_command {
 	public:
-		bool execute(const std::vector< std::string >& source_files)
+		bool execute(const std::vector< std::string >& source_files) const noexcept
 		{
 			return build(source_files);
 		}
@@ -17,7 +20,7 @@ namespace coup {
 
 	class run_command {
 	public:
-		bool execute(const std::vector< std::string >& source_files)
+		bool execute(const std::vector< std::string >& source_files) const noexcept
 		{
 			return run(source_files);
 		}
@@ -25,21 +28,24 @@ namespace coup {
 
 	class clean_command {
 	public:
-		bool execute(const std::vector< std::string >& source_files)
+		bool execute(const std::vector< std::string >& source_files) const noexcept
 		{ 
 			return true;
 		}
 	};
-
 	
-	using command = std::variant< run_command, build_command, clean_command >;
+	using command_type = std::variant< run_command, build_command, clean_command >;
 	
-	bool execute(const command& cmd, const std::vector< std::string >& args)
+	bool execute_cmd(const command_type& cmd, const std::vector< std::string >& args)
 	{
-		std::visit([&args](const auto& c){ return c.execute(args); }, cmd);
+		assert(!args.empty());
+		return std::visit([&args](const auto& c)
+		{
+			return c.execute(args);
+		}, cmd);
 	}
-	
-	command create_command(const char* cmd)
+
+	command_type create_command(const char* cmd)
 	{
 		if(cmd == "build")
 		{
@@ -56,7 +62,7 @@ namespace coup {
 		else
 		{
 			print_usage();
-			std::cerr << "Invalid command used\n";
+			throw std::runtime_error("invalid command");
 		}
 	}
 

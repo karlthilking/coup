@@ -7,6 +7,7 @@
 #include <stdexcept> // runtime_error
 
 #include "regex.hpp" // extract_header
+#include "parser.hxx" // get_stem, get_extension
 
 using fs = std::filesystem; 
 
@@ -34,22 +35,6 @@ namespace coup {
 			} while(current.parent_path() != current);
 
 			return std::nullopt;
-		}
-
-		std::string_view get_stem(std::string_view file) const noexcept
-		{
-			size_t dot_pos = file.rfind('.');
-			assert(dot_pos != filepath.end());
-
-			return file.substr(0, dot_pos);
-		}
-
-		std::string_view get_extension(std::string_view filepath) const noexcept
-		{
-			size_t dot_pos = filepath.rfind('.');
-			assert(dot_pos != std::string_view::npos);
-
-			return filepath.substr(dot_pos + 1);
 		}
 
 		bool is_source_file(std::string_view file_ext) const noexcept

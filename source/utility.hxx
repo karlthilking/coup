@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream> // std::cout std::cerr
 
+#include "parse.hxx" // convert_to_obj_file(s)
 #include "config.hxx" // CPP macro
 
 namespace coup {
@@ -29,7 +30,7 @@ namespace coup {
 	{
 		std::string compile_cmd("g++ -std=");
 		compile_cmd += cpp_version + " -c " + source_file + " -o ";
-		compile_cmd += source_to_object(source_file);
+		compile_cmd += convert_to_obj_file(source_file);
 		return compile_cmd;
 	}
 	
@@ -48,14 +49,6 @@ namespace coup {
 	}
 
 	std::string create_run_command() { return std::string("./program"); }
-	
-	void convert_to_object_files(std::vector< std::string >& source_files);
-	{
-		for(std::string& src: source_files)
-		{
-			src = src.substr(0, src.length() - 4) + ".o";
-		}
-	}
 
 	bool compile(const std::vector< std::string >& source_files)
 	{
@@ -100,7 +93,7 @@ namespace coup {
 		bool compilation_result = compile(source_files);
 		assert(compilation_result == true);
 	
-		convert_to_object_files(source_files);
+		convert_to_obj_files(source_files);
 
 		bool link_result = link(source_files); // source files now object files
 		assert(link_result == true);

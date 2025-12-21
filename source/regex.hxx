@@ -1,6 +1,9 @@
 #include <string>
 #include <optional>
 #include <string_view>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace coup {
 	
@@ -16,5 +19,6 @@ namespace coup {
 
 		return line.substr(l, r - l);
 	}
+	
 	
 }
