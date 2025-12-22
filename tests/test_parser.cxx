@@ -76,7 +76,6 @@ TEST_F(parser_test, get_ext2)
 	EXPECT_TRUE(opt.has_value());
 	EXPECT_EQ(opt.value(), "cxx");
 }
-	
 TEST_F(parser_test, get_ext3)
 {
 	std::optional< std::string_view > opt = get_extension(tc3);
@@ -108,3 +107,7 @@ TEST_F(parser_test, get_ext7)
 }
 
 
+TEST_F(parser_test, get_obj_file)
+{
+	
+}

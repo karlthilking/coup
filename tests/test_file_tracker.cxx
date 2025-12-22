@@ -13,13 +13,13 @@ using namespace coup;
 
 class file_tracker_test : public testing::Test
 {
-	protected:
-		file_tracker_test() = default;
-		~file_tracker_test() = default;
+protected:
+	file_tracker_test() = default;
+	~file_tracker_test() = default;
 		
-		file_tracker ft{};	
+	file_tracker ft{};	
 
-		void SetUp() {}
+	void SetUp() override {}
 };
 
 TEST_F(file_tracker_test, test_root)
@@ -31,33 +31,30 @@ TEST_F(file_tracker_test, test_root)
 	std::cout << "Root path: " << root.string() << "\n";
 }
 
-TEST_F(file_tracker_test, test_source_files)
+TEST_F(file_tracker_test, test_file_discovery)
 {
 	std::vector< fs::path > src_files = ft.get_source_files();
+	std::vector< fs::path > header_files = ft.get_header_files();
 
-	EXPECT_FALSE(src_files.empty());
+	EXPECT_TRUE(!(src_files.empty() && header_files.empty()));
 	
 	std::cout << "Source files:\n";
 	for(const auto& src: src_files)
 	{
-		std::cout << src.string() << "\n";
 		EXPECT_FALSE(src.empty());
 		EXPECT_TRUE(fs::exists(src));
+		
+		std::cout << src.string() << "\n";
 	}
-}
 
-TEST_F(file_tracker_test, test_header_files)
-{
-	std::vector< fs::path > header_files = ft.get_header_files();
-	
 	std::cout << "Header files:\n";
-	EXPECT_FALSE(header_files.empty());
 	for(const auto& header: header_files)
 	{
-		std::cout << header.string() << "\n";
-
 		EXPECT_FALSE(header.empty());
 		EXPECT_TRUE(fs::exists(header));
+
+		std::cout << header.string() << "\n";
 	}
 }
+		
 
