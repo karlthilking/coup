@@ -29,7 +29,8 @@ namespace coup {
 
 			do
 			{
-				if(fs::exists(current / "src") || fs::exists(current / "source"))
+				if(fs::exists(current / "src") || fs::exists(current / "source") ||
+					 fs::exists(current / "include"))
 				{
 					return current;
 				}
@@ -41,7 +42,13 @@ namespace coup {
 
 		bool is_source_file(std::string_view file_ext) const noexcept
 		{
-			if(file_ext == "cpp" || file_ext == "cc" || file_ext == "cxx")
+			assert(!file_ext.empty());
+
+			if(file_ext == "cpp" ||
+				 file_ext == "cc" ||
+				 file_ext == "cxx" ||
+				 file_ext == "C" ||
+				 file_ext == "c++")
 			{
 				return true;
 			}
@@ -50,29 +57,93 @@ namespace coup {
 
 		bool is_header_file(std::string_view file_ext) const noexcept
 		{
-			if(file_ext == "h" || file_ext == "hpp" || file_ext == "hxx")
+			assert(!file_ext.empty());
+
+			if(file_ext == "h" ||
+				 file_ext == "hh" ||
+				 file_ext == "hpp" ||
+				 file_ext == "hxx" ||
+				 file_ext == "h++" ||
+				 file_ext == "H")
 			{
 				return true;
 			}
 			return false;
 		}
+		
+		void find_src_files(const fs::path src_dir) noexcept
+		{
+			for(const auto& entry: fs::recursive_directory_iterator(src_dir))
+			{
+				if(!entry.is_regular_file()) { continue;}
+
+				std::string src_name = entry.path().string();
+				std::optional< std::string_view > opt = get_extension(src_name);
+
+				if(!opt.has_value()) { continue;}
+				std::string_view src_ext = opt.value();
+
+				if(is_source_file(src_ext)) { source_files.push_back(entry);}
+				if(is_header_file(src_ext))
+				{
+					std::cerr << "[WARNING] Header file in src/: "
+						<< src_name << "\n";
+					header_files.push_back(entry);
+				}
+			}
+		}
+
+		void find_header_files(const fs::path& include_dir) noexcept
+		{
+			for(const auto& entry: fs::recursive_directory_iterator(include_dir))
+			{
+				if(!entry.is_regular_file()) { continue;}
+
+				std::string header_name = entry.path().string();
+				std::optional< std::string_view > opt = get_extension(header_name);
+
+				if(!opt.has_value()) { continue;}
+				std::string_view header_ext = opt.value();
+
+				if(is_header_file(header_ext)) { header_files.push_back(entry);}
+				if(is_source_file(header_ext))
+				{
+					std::cerr << "Source file in include/: "
+						<< header_name << "\n";
+					source_files.push_back(entry);
+				}
+			}
+		}
 
 		void initialize_files() noexcept
 		{
 			assert(fs::exists(root_path) && !root_path.empty());
-		
-			for(const auto& entry: fs::recursive_directory_iterator(root_path))
+			bool src_dir_exists = false;
+			bool include_dir_exists = false;
+
+			if(fs::exists(root_path / "src"))
 			{
-				if(!entry.is_regular_file()) { continue;}
-				
-				std::string filename = entry.path().string();
-				std::optional< std::string_view > ex = get_extension(filename);
-
-				if(!ex.has_value()) { continue;}
-				std::string_view ext = ex.value();
-
-				if(is_source_file(ext)) { source_files.push_back(entry);}
-				if(is_header_file(ext)) { header_files.push_back(entry);}
+				fs::path src_dir = root_path / "src";
+				find_src_files(src_dir);
+				src_dir_exists = true;
+			}
+			else if(fs::exists(root_path / "source"))
+			{
+				fs::path src_dir = root_path / "source";
+				find_src_files(src_dir);
+				src_dir_exists = true;
+			}
+			
+			if(fs::exists(root_path / "include"))
+			{
+				fs::path header_dir = root_path / "include";
+				find_header_files(header_dir);
+				include_dir_exists = true;
+			}
+			
+			if(!src_dir_exists && !include_dir_exists)
+			{
+				throw std::runtime_error("No src/source or include directories\n");
 			}
 		}	
 
