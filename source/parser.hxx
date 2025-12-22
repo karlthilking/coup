@@ -5,13 +5,18 @@
 #include <string_view>
 #include <cassert>
 #include <optional>
+#include <stdexcept>
 
 namespace coup
 {
 	inline std::string get_obj_file(std::string_view src)
 	{
 		size_t dot_pos = src.rfind('.');
-		assert(dot_pos != std::string_view::npos);
+
+		if(dot_pos == std::string_view::npos)
+		{
+			throw std::runtime_error("Not a valid source file");
+		}
 
 		std::string obj{src};
 		obj = obj.substr(0, dot_pos + 1);
@@ -53,4 +58,5 @@ namespace coup
 
 		return file.substr(dot_pos + 1);
 	}
+
 }

@@ -7,6 +7,8 @@
 #include <optional>
 #include <cassert> // assert
 #include <stdexcept> // runtime_error
+#include <unordered_map>
+#include <algorithm> // find
 
 #include "regex.hxx" // extract_header
 #include "parser.hxx" // get_stem, get_extension
@@ -18,11 +20,12 @@ namespace coup {
 	class file_tracker {
 
 	private:
-		fs::path root_path;
-		std::vector< fs::path > source_files;
-		std::vector< fs::path > header_files;
+		fs::path root_;
+		std::vector< fs::path > src_files_;
+		std::vector< fs::path > header_files_;
+		std::unordered_map< fs::path, std::vector< fs::path >> src_deps_;
 	
-		std::optional< fs::path > find_root(fs::path p = fs::current_path())
+		std::optional< fs::path > find_root(fs::path p = fs::current_path()) const noexcept
 		{
 			fs::path current = fs::absolute(p);
 			assert(fs::exists(current));
@@ -40,7 +43,7 @@ namespace coup {
 			return std::nullopt;
 		}
 
-		bool is_source_file(std::string_view file_ext) const noexcept
+		[[nodiscard]] constexpr bool is_source_file(std::string_view file_ext) const noexcept
 		{
 			assert(!file_ext.empty());
 
@@ -55,7 +58,7 @@ namespace coup {
 			return false;
 		}
 
-		bool is_header_file(std::string_view file_ext) const noexcept
+		[[nodiscard]] constexpr bool is_header_file(std::string_view file_ext) const noexcept
 		{
 			assert(!file_ext.empty());
 
@@ -83,12 +86,12 @@ namespace coup {
 				if(!opt.has_value()) { continue;}
 				std::string_view src_ext = opt.value();
 
-				if(is_source_file(src_ext)) { source_files.push_back(entry);}
+				if(is_source_file(src_ext)) { src_files_.push_back(entry);}
 				if(is_header_file(src_ext))
 				{
 					std::cerr << "[WARNING] Header file in src/: "
 						<< src_name << "\n";
-					header_files.push_back(entry);
+					header_files_.push_back(entry);
 				}
 			}
 		}
@@ -105,17 +108,17 @@ namespace coup {
 				if(!opt.has_value()) { continue;}
 				std::string_view header_ext = opt.value();
 
-				if(is_header_file(header_ext)) { header_files.push_back(entry);}
+				if(is_header_file(header_ext)) { header_files_.push_back(entry);}
 				if(is_source_file(header_ext))
 				{
-					std::cerr << "Source file in include/: "
+					std::cerr << "[WARNING] Source file in include/: "
 						<< header_name << "\n";
-					source_files.push_back(entry);
+					src_files_.push_back(entry);
 				}
 			}
 		}
 
-		void initialize_files() noexcept
+		[[nodiscard]] bool init_files() noexcept
 		{
 			assert(fs::exists(root_path) && !root_path.empty());
 			bool src_dir_exists = false;
@@ -141,11 +144,31 @@ namespace coup {
 				include_dir_exists = true;
 			}
 			
-			if(!src_dir_exists && !include_dir_exists)
-			{
-				throw std::runtime_error("No src/source or include directories\n");
-			}
+			if(!(scr_dir_exists || include_dir_exists)) { return false;}
+			else { return true;}
 		}	
+		
+		[[nodiscard]] constexpr bool header_exists(std::string_view header) const noexcept
+		{
+			auto it = std::find(begin(header_files_), end(header_files_),
+				[](const fs::path& h) { return 
+		}
+
+		[[nodiscard]] std::vector< fs::path > get_deps(const fs::path& src) const noexcept
+		{
+			std::vector< fs::path > deps;
+			std::ifstream src_in(src);
+			std::string line;
+
+			while(std::getline(src_in, line))
+			{
+				std::optional< std::string_view > opt = extract_header(line);
+				if(opt.has_value())
+				{
+				}
+			}
+			return deps;
+		}
 
 	public:
 		file_tracker() 
@@ -154,43 +177,37 @@ namespace coup {
 			
 			if(!root.has_value())
 			{
-				throw std::runtime_error("Could not identify a root directory\n");
+				throw std::runtime_error("[ERROR] Could not identify a root directory\n");
 			}
 
 			root_path = root.value();
-			initialize_files();
+			bool success = init_files();
+			if(!success)
+			{
+				throw std::runtime_error("[ERROR] Could not find source or include directories\n");
+			}
 		}
 		
-		fs::path get_root() const noexcept { return root_path; }
+		[[nodiscard]] fs::path get_root() const noexcept { return root_path; }
 		
-		std::vector< fs::path > get_source_files() const noexcept
+		[[nodiscard]] std::vector< fs::path > get_source_files() const noexcept
 		{
 			return source_files;
 		}
 
-		std::vector< fs::path > get_header_files() const noexcept
+		[[nodiscard]] std::vector< fs::path > get_header_files() const noexcept
 		{
 			return header_files;
 		}
 
-		/*
-		std::vector< fs::path > get_dependencies(const fs::path& pth)
+		void init_deps() noexcept
 		{
-			std::vector< fs::path > dependencies;
-			std::ifstream input(pth);
-			std::string line;
-
-			while(std::getline(input, line))
+			assert(!src_files_.empty());
+			for(const auto& src: src_files_)
 			{
-				std::optional< std::string_view > h = extract_header(line);
-				if(h.has_value())
-				{
-					std::optional< fs::path > src = get_source(h.value());
-					if(src.has_value()) { dependencies.push_back(src.value()); }
-				}
+				std::vector< fs::path > deps = get_deps(src);
+				src_deps_[src] = deps;
 			}
-			if(dependencies.empty()) { return {};}
-			else { return dependencies;}
 		}
 		
 		
@@ -211,6 +228,5 @@ namespace coup {
 		fs::file_time_type get_last_update(const fs::path& pth) const noexcept
 		{
 		}
-		*/
 	};
 }
