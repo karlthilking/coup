@@ -147,11 +147,17 @@ namespace coup {
 			if(!(scr_dir_exists || include_dir_exists)) { return false;}
 			else { return true;}
 		}	
-		
-		[[nodiscard]] constexpr bool header_exists(std::string_view header) const noexcept
+
+		[[nodiscard]] std::optional< fs::path > get_header_by_name(std::string_view header) const noexcept
 		{
-			auto it = std::find(begin(header_files_), end(header_files_),
-				[](const fs::path& h) { return 
+			auto it = std::find_if(begin(header_files_), end(header_files_),
+				[header](const auto& h)
+				{
+					return h.string() == header;
+				}
+			);
+			if(it == end(header_files_)) { return std::nullopt; }
+			else { return *it; }
 		}
 
 		[[nodiscard]] std::vector< fs::path > get_deps(const fs::path& src) const noexcept
@@ -162,12 +168,25 @@ namespace coup {
 
 			while(std::getline(src_in, line))
 			{
-				std::optional< std::string_view > opt = extract_header(line);
-				if(opt.has_value())
-				{
-				}
+				std::optional< std::string_view > h_line = extract_header(line);
+				if(!h_line.has_value()) { continue; }
+				
+				std::string_view h_name = h_line.value();
+				std::optional< fs::path > h_opt = get_header_by_name(h_name);
+				if(!h_opt.has_value()) { continue; }
+				
+				deps.push_back(h_opt.value());
 			}
 			return deps;
+		}
+
+		void init_deps() noexcept
+		{
+			for(const fs::path& src: src_files_)
+			{
+				std::vector< fs::path > deps = get_deps(src);
+				src_deps_[src] = deps;
+			}
 		}
 
 	public:
