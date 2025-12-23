@@ -17,7 +17,7 @@ namespace fs = std::filesystem;
 
 namespace coup 
 {
-  std::optional< fs::path > find_root(const fs::path& p = fs::current_path())
+  std::optional< fs::path > get_root(const fs::path& p = fs::current_path())
   {
     fs::path cur = fs::absolute(p);
     assert(fs::exists(p));
@@ -35,7 +35,7 @@ namespace coup
     return std::nullopt;
   }
 
-  std::optional< fs::path > get_src(const fs::path& root)
+  std::optional< fs::path > get_src_dir(const fs::path& root)
   {
     if(fs::exists(root / "src"))
     {
@@ -44,7 +44,7 @@ namespace coup
     return std::nullopt;
   }
 
-  std::optional< fs::path > get_include(const fs::path& root)
+  std::optional< fs::path > get_include_dir(const fs::path& root)
   {
     if(fs::exists(root / "include"))
     {
@@ -57,8 +57,11 @@ namespace coup
   {
     assert(fs::exists(file));
     assert(!file.empty());
-    std::string file_ext = get_extension(file.string());
 
+    std::optional< std::string_view > ext_opt = get_extension(file.string());
+    if(!ext_opt.has_value()) { return false; }
+    
+    std::string_view file_ext = ext_opt.value();
 	  if(file_ext == "cpp" ||
 			 file_ext == "cc" ||
        file_ext == "cxx" ||
@@ -74,8 +77,11 @@ namespace coup
   {
     assert(fs::exists(file));
     assert(!file.empty());
-    std::string file_ext = get_extension(file.string());
 
+    std::optional< std::string_view > ext_opt = get_extension(file.string());
+    if(!ext_opt.has_value()) { return false; }
+
+    std::string_view file_ext = ext_opt.value();
 		if(file_ext == "h" ||
 			 file_ext == "hh" ||
 			 file_ext == "hpp" ||
@@ -87,6 +93,19 @@ namespace coup
 		}
     return false;
 	}
+
+  [[nodiscard]] constexpr bool is_obj_file(const fs::path& file)
+  {
+    assert(fs::exists(file));
+    assert(!file.empty());
+
+    std::optional< std::string_view > ext_opt = get_extension(file.string());
+    if(!ext_opt.has_value()) { return false; }
+
+    std::string_view file_ext = ext_opt.value();
+    if(file_ext == "o") { return true; }
+    return false;
+  }
 		
 	[[nodiscard]]
   std::vector< fs::path > get_src_files(const fs::path& src_dir)
@@ -97,25 +116,22 @@ namespace coup
     {
       if(!entry.is_regular_file()) { continue; }
       
-      fs::path cur = entry.path();
-      if(cur.empty()) { continue; }
-
-      std::optional< std::string_view > fn_opt = get_filename(cur.string());
-      assert(fn_opt.has_value());
-      std::string_view filename = fn_opt.value();
+      fs::path file_path = entry.path();
+      if(file_path.empty()) { continue; }
       
-      std::optional< std::string_view > ext_opt = get_extension(filename);
-      if(!ext_opt.has_value()) { continue; }
-
-      std::string_view ext = ext_opt.value();
-      if(is_source_file(ext))
+      if(is_src_file(file_path))
       {
-        src_files.push_back(cur);
+        src_files.push_back(file_path);
       }
-      else if(is_header_file(ext))
+      else if(is_header_file(file_path))
       {
-        std::cerr << "[WARNING] Header file in src/: "
+        std::optional< std::string_view > fn_opt  = get_filename(file_path.string());
+        assert(fn_opt.has_value());
+
+        std::string_view filename = fn_opt.value();
+        std::cerr << "[WARNING] Header file in src directory: "
           << filename << "\n";
+      }
     }
     return src_files;
   }
@@ -129,27 +145,43 @@ namespace coup
     {
       if(!entry.is_regular_file()) { continue; }
 
-      fs::path cur = entry.path();
-      if(cur.empty()) { continue; }
+      fs::path file_path = entry.path();
+      if(file_path.empty()) { continue; }
       
-      std::optional< std::string_view > fn_opt = get_filename(cur.string());
-      assert(fn_opt.has_value());
-      std::string_view filename = fn_opt.value();
-     
-      std::optional< std::string_view > ext_opt = get_extension(fn);
-      if(!ext_opt.has_value()) { continue; }
-
-      std::string_view ext = ext_opt.value();
-      if(is_header_file(ext))
+      if(is_header_file(file_path))
       {
-        header_files.push_back(cur);
+        header_files.push_back(file_path);
       }
-      else if(is_source_file(ext))
+      else if(is_source_file(file_path))
       {
+        std::optional< std::string_view > fn_opt = get_filename(file_path.string());
+        assert(fn_opt.has_value());
+
+        std::string_view filename = fn_opt.value();
         std::cerr << "[WARNING] Source file in include/: "
           << filename << "\n";
       }
     }
     return header_files;
   }
+
+  [[nodiscard]]
+  std::vector< fs::path > get_obj_files(const fs::path& root)
+  { 
+    std::vector< fs::path > obj_files;
+    for(const auto& entry: fs::recursive_directory_iterator(root))
+    {
+      if(!entry.is_regular_file()) { continue; }
+
+      fs::path cur = entry.path();
+      if(cur.empty()) { continue; }
+      
+      if(is_obj_file(cur))
+      {
+        obj_files.push_back(cur);
+      }
+    }
+    return obj_files;
+  }
+      
 }
