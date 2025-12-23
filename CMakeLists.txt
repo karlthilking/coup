@@ -13,6 +13,7 @@ option(ENABLE_TSAN OFF)
 option(ENABLE_WARNINGS ON)
 option(WARNINGS_AS_ERRORS OFF)
 option(ENABLE_CLANG_TIDY OFF)
+option(ENABLE_TESTING ON)
 
 if(ENABLE_WARNINGS)
 	add_compile_options(
@@ -66,3 +67,26 @@ target_include_directories(coup PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/source
 )
 
+if(ENABLE_TESTING)
+  enable_testing()
+  include(FetchContent)
+  FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG v1.14.0
+  )
+
+  FetchContent_MakeAvailable(googletest)
+  add_executable(coup_tests
+    tests/test_commands.cxx
+    tests/test_file_tracker.cxx
+    tests/test_parser.cxx
+    tests/test_regex.cxx
+    tests/test_utility.cxx
+  )
+  target_link_libraries(coup_tests PRIVATE GTest::gtest_main)
+  target_include_directories(coup_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/source)
+
+  include(GoogleTest)
+  gtest_discover_tests(coup_tests)
+endif()
