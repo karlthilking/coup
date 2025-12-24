@@ -53,21 +53,22 @@ if(ENABLE_CLANG_TIDY)
 endif()
 
 set(COUP_HEADERS
-	source/commands.hxx
-	source/file_tracker.hxx
-	source/project.hxx
-	source/utility.hxx
-	source/config.hxx
-	source/regex.hxx
+	include/commands.hxx
+	include/file_tracker.hxx
+	include/project.hxx
+	include/utility.hxx
+	include/config.hxx
+	include/regex.hxx
 )
 	
-add_executable(coup source/main.cxx ${COUP_HEADERS})
+add_executable(coup src/main.cxx ${COUP_HEADERS})
 
 target_include_directories(coup PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/source
 )
 
 if(ENABLE_TESTING)
+  add_compile_definitions(ENABLE_TESTING)
   enable_testing()
   include(FetchContent)
   FetchContent_Declare(
