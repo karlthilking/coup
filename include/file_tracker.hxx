@@ -1,5 +1,15 @@
 #pragma once
 
+#ifdef ENABLE_TESTING
+  #define ASSERT(pred)
+  #define DEBUG_OPT(o) std::cout << o.has_value() << "\n";
+  #define DEBUG_OUT(s) std::cout << s << "\n";
+#else
+  #define ASSERT(pred) assert(pred);
+  #define DEBUG_OPT(o)
+  #define DEBUG_OUT(s)
+#endif
+
 #include <filesystem> // path, last_write_time, current_path, parent_path, exists
 #include <fstream> // ifstream
 #include <vector>
@@ -53,15 +63,19 @@ namespace coup
     return std::nullopt;
   }
 
-  [[nodiscard]] constexpr bool is_src_file(const fs::path& file)
+  [[nodiscard]] inline bool is_src_file(const fs::path& file)
   {
-    assert(fs::exists(file));
-    assert(!file.empty());
+    ASSERT(fs::exists(file));
+    ASSERT(!file.empty());
+  
+    std::string filepath = file.string();
+    std::optional< std::string_view > ext_opt = get_extension(filepath);
+    DEBUG_OPT(ext_opt)
 
-    std::optional< std::string_view > ext_opt = get_extension(file.string());
     if(!ext_opt.has_value()) { return false; }
     
     std::string_view file_ext = ext_opt.value();
+    DEBUG_OUT(file_ext)
 	  if(file_ext == "cpp" ||
 			 file_ext == "cc" ||
        file_ext == "cxx" ||
@@ -73,15 +87,20 @@ namespace coup
 		return false;
 	}
   
-  [[nodiscard]] constexpr bool is_header_file(const fs::path& file)
+  [[nodiscard]] inline bool is_header_file(const fs::path& file)
   {
-    assert(fs::exists(file));
-    assert(!file.empty());
+    ASSERT(fs::exists(file));
+    ASSERT(!file.empty());
+    
+    std::string filepath = file.string();
+    std::optional< std::string_view > ext_opt = get_extension(filepath);
+    DEBUG_OPT(ext_opt)
 
-    std::optional< std::string_view > ext_opt = get_extension(file.string());
     if(!ext_opt.has_value()) { return false; }
-
+    
     std::string_view file_ext = ext_opt.value();
+    DEBUG_OUT(file_ext)
+
 		if(file_ext == "h" ||
 			 file_ext == "hh" ||
 			 file_ext == "hpp" ||
@@ -94,16 +113,20 @@ namespace coup
     return false;
 	}
 
-  [[nodiscard]] constexpr bool is_obj_file(const fs::path& file)
+  [[nodiscard]] inline bool is_obj_file(const fs::path& file)
   {
-    assert(fs::exists(file));
-    assert(!file.empty());
-
-    std::optional< std::string_view > ext_opt = get_extension(file.string());
+    ASSERT(fs::exists(file));
+    ASSERT(!file.empty());
+    
+    std::string filepath = file.string();
+    std::optional< std::string_view > ext_opt = get_extension(filepath);
+    DEBUG_OPT(ext_opt)
     if(!ext_opt.has_value()) { return false; }
 
     std::string_view file_ext = ext_opt.value();
-    if(file_ext == "o") { return true; }
+    DEBUG_OUT(file_ext)
+
+    if(file_ext == "o" || file_ext == "obj") { return true; }
     return false;
   }
 		
@@ -112,7 +135,7 @@ namespace coup
   {
     std::vector< fs::path > src_files;
 
-    for(const auto& entry: fs::recusrive_directory_iterator(src_dir))
+    for(const auto& entry: fs::recursive_directory_iterator(src_dir))
     {
       if(!entry.is_regular_file()) { continue; }
       
@@ -152,7 +175,7 @@ namespace coup
       {
         header_files.push_back(file_path);
       }
-      else if(is_source_file(file_path))
+      else if(is_src_file(file_path))
       {
         std::optional< std::string_view > fn_opt = get_filename(file_path.string());
         assert(fn_opt.has_value());
