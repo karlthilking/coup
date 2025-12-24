@@ -1,3 +1,5 @@
+#include <gtest/gtest.h>
+
 #include <string>
 #include <optional>
 #include <string_view>
@@ -12,58 +14,54 @@ protected:
   regex_test() = default;
   ~regex_test() = default;
   
-  std::string local_include_normal = "#include /"file.h/"";
-  std::string local_include_no_space = "#include/"file.h/"";
-  std::string local_include_multiple_spaces = "#include    /"file.h/"";
-  std::string system_include = "#include <iostream>";
-  std::string non_include = "int x = 42;";
-  std::string incorrect_include = "#include /"file.h";
+  void SetUp() override {}
 
-  void SetUp override {}
+  std::string s1 = "#include \"header.hpp\""; 
+  std::string s2 = "#include\"header.hpp\"";
+  std::string s3 = "#include     \"header.hpp\"";
+  std::string s4 = "#include <iostream>";
+  std::string s5 = "int x = 42";
 };
 
-TEST_F(regex_test, test_local_include_normal)
+TEST_F(regex_test, header_test)
 {
-  std::optional< std::string_view > h_opt = extract_header(local_include_normal);
-  EXPECT_TRUE(h_opt.has_value());
-  
-  std::string_view header = h_opt.value();
-  EXPECT_EQ(header, "file.h");
+  std::optional< std::string_view > opt = extract_header(s1);
+  EXPECT_TRUE(opt.has_value());
+
+  std::string_view header = opt.value();
+  EXPECT_EQ(header, "header.hpp");
 }
 
-TEST_F(regex_test, test_local_include_no_space)
+TEST_F(regex_test, no_spaces_test)
 {
-  std::optional< std::string_view > h_opt = extract_header(local_include_no_space);
-  EXPECT_TRUE(h_opt.has_value());
+  std::optional< std::string_view > opt = extract_header(s2);
+  EXPECT_TRUE(opt.has_value());
 
-  std::string_view header = h_opt.value();
-  EXPECT_EQ(header, "file.h");
+  std::string_view header = opt.value();
+  EXPECT_EQ(header, "header.hpp");
 }
 
-TEST_F(regex_test, test_local_include_multiple_spaces)
+TEST_F(regex_test, multiple_spaces_test)
 {
-  std::optional< std::string_view > h_opt = extract_header(local_include_multiple_spaces);
-  EXPECT_TRUE(h_opt.has_value());
+  std::optional< std::string_view > opt = extract_header(s3);
+  EXPECT_TRUE(opt.has_value());
 
-  std::string_view header = h_opt.value();
-  EXPECT_EQ(header, "file.h");
+  std::string_view header = opt.value();
+  EXPECT_EQ(header, "header.hpp");
 }
 
-TEST_F(regex_test, test_system_include)
+TEST_F(regex_test, system_header_test)
 {
-  std::optional< std::string_view > h_opt = extract_header(system_include);
-  EXPECT_TRUE(!h_opt.has_value());
+  std::optional< std::string_view > opt = extract_header(s4);
+  EXPECT_FALSE(opt.has_value());
 }
 
-TEST_F(regex_test, test_non_include)
+TEST_F(regex_test, non_include_test)
 {
-  std::optional< std::string_view > h_opt = extract_header(non_include);
-  EXPECT_TRUE(!h_opt.has_value());
+  std::optional< std::string_view > opt = extract_header(s5);
+  EXPECT_FALSE(opt.has_value());
 }
 
-TEST_F(regex_test, test_incorrect_include)
-{
-  std::optional< std::string_view > h_opt = extract_header(incorrect_include);
-  EXPECT_TRUE(!h_opt.has_value());
-}
+
+
 
