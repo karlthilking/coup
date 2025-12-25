@@ -117,6 +117,12 @@ TEST_F(parser_test, create_obj_file_main)
   EXPECT_EQ(obj_file, "main.o");
 }
 
+TEST_F(parser_test, create_obj_file_srcmain)
+{
+  std::string obj_file = create_obj_file(fp1);
+  EXPECT_EQ(obj_file, "src/main.o");
+}
+
 TEST_F(parser_test, get_filename_main)
 {
   std::optional< std::string_view > opt = get_filename(fp1);
@@ -158,4 +164,42 @@ TEST_F(parser_test, get_filename_none)
   std::string empty = "";
   std::optional< std::string_view > opt = get_filename(empty);
   EXPECT_FALSE(opt.has_value());
+}
+
+TEST_F(parser_test, get_filename_values_exist)
+{
+  // assert that shortened filenames are recognized by std::filesystem
+  std::optional< fs::path > r_opt = get_root();
+  fs::path root = r_opt.value();
+
+  std::optional< fs::path > src_dir_opt = get_src_dir(root);
+  std::optional< fs::path > inc_dir_opt = get_include_dir(root);
+
+  src_dir = src_dir_opt.value();
+  include_dir = inc_dir_opt.value();
+
+  std::vector< fs::path > src_files = get_src_files(src_dir);
+  std::vector< fs::path > header_files = get_header_files(include_dir);
+
+  for(const fs::path& src: src_files)
+  {
+    std::string src_path = src.string();
+    std::optional< std::string_view > opt = get_filename(src_path);
+    EXPECT_TRUE(opt.has_value());
+
+    std::string_view src_name = opt.value();
+    fs::path src_path_short(src_name);
+    EXPECT_TRUE(fs::exists(src_path_short));
+  }
+
+  for(const fs::path& header: header_files)
+  {
+    std::string header_path = header.string();
+    std::optional< std::string_view > opt = get_filename(header_path);
+    EXPECT_TRUE(opt.has_value());
+
+    std::string_view header_name = opt.value();
+    fs::path header_path_short(header_name);
+    EXPECT_TRUE(fs::exists(header_path_short));
+  }
 }
