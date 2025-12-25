@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 #include <filesystem>
 #include <string>
@@ -13,12 +15,11 @@ namespace coup
   class dag
   {
   private:
-    std::vector< node* > src_nodes;
-    std::vector< node* > sink_nodes;
+    std::vector< node* > nodes;
   public:
-    dag(std::vector< node* > s, std::vector< node* > t) noexcept;
-    std::vector< fs::path > topological_sort() const noexcept;
-    
+    dag(std::vector< node* > S) noexcept;
+    ~dag() noexcept;
+    std::vector< node* > topological_sort() const noexcept;
   };
 
   struct node
@@ -27,20 +28,12 @@ namespace coup
     fs::path path;
     std::vector< node* > children;
 
-    node(file_type ft, const fs::path& pth)
-      : type(ft), path(pth)
-    {
-      assert(fs::exists(path));
-    }
-
-    void insert(node* child) noexcept { children.push_back(child); }
-    
-    fs::file_time_type get_last_update() const noexcept
-    {
-      return fs::last_write_time(path);
-    }
+    node(file_type ft, const fs::path& p);
+    void insert(node* child) noexcept; 
+    void insert(file_type ft, const fs::path& p) noexcept;
+    fs::file_time_type last_update() const noexcept;
   };
   
-  enum class file_type { source, header };
+  enum class file_type { src, header, obj };
   
 }
