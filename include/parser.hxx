@@ -9,7 +9,7 @@
 
 namespace coup
 {
-	inline std::string get_obj_file(std::string_view src)
+	inline std::string create_obj_file(std::string_view src)
 	{
 		size_t dot_pos = src.rfind('.');
 
@@ -24,7 +24,7 @@ namespace coup
 		return obj;
 	}
 
-	inline std::vector< std::string > get_obj_files(const std::vector< std::string >& src_files)
+	inline std::vector< std::string > create_obj_files(const std::vector< std::string >& src_files)
 	{
 		std::vector< std::string > obj_files(src_files.size());
 	
@@ -64,7 +64,7 @@ namespace coup
     if(file.empty()) { return std::nullopt; }
     size_t last_slash_pos = file.rfind('/');
 
-    if(last_slash_pos == std::string_view::npos) { return std::nullopt; }
+    if(last_slash_pos == std::string_view::npos) { return file; }
     
     return file.substr(last_slash_pos + 1);
   }
