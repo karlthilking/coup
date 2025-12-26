@@ -3,66 +3,44 @@
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
+
 #include "file_tracker.hxx"
 
 namespace fs = std::filesystem;
 
 namespace coup
-{ 
-  project create_project()
-  {
-    std::optional< fs::path > root_opt = get_root();
-    assert(root_opt.has_value());
-
-    fs::path root = root_opt.value();
-
-    std::optional< fs::path > src_dir_opt = get_src_dir(root);
-    std::optional< fs::path > inc_dir_opt = get_include_dir(root);
-
-    if(!(src_dir_opt.has_value() || inc_dir_opt.has_value())
-    {
-      std::runtime_error("[ERROR] No source or include directory provided\n");
-    }
-    else if(src_dir_opt.has_value() && inc_dir_opt.has_value())
-    {
-      fs::path src_dir = src_dir_opt.value();
-      fs::path include_dir = inc_dir_opt.value();
-
-      std::vector< fs::path > src_files = get_src_files(src_dir);
-      std::vector< fs::path > header_files = get_header_files(include_dir);
-
-      return project(src_files, header_files);
-    }
-    else if(src_dir_opt.has_value())
-    {
-      fs::path src_dir = src_dir_opt.value();
-      std::vector< fs::path > src_files = get_src_files(src_dir);
-
-      return project(src_files);
-    }
-    else
-    {
-      fs::path include_dir = inc_dir_opt.value();
-      std::vector< fs::path > header_files = get_header_files(include_dir);
-
-      return project({}, header_files);
-    }
-  }
-
-  class project
+{   
+  class coup_file
   {
   private:
-    std::vector< fs::path > src_files;
-    std::vector< fs::path > header_files;
+    fs::path src_file;
+    fs::path header_file;
+    fs::path obj_file;
+
+    bool src_exists;
+    bool header_exists;
+    bool obj_exists;
   public:
-    project(const std::vector< fs::path >& sources = {}, 
-            const std::vector< fs::path >& headers = {});
+    coup_file(const fs::path& s, const fs::path& h, const fs::path& o);
+    coup_file(fs::path&& s, fs::path&& h, fs::path&& o);
+    
+    bool src_exists() const noexcept;
+    bool header_exists() const noexcept;
+    bool obj_exists() const noexcept;
 
-    [[nodiscard]]
-    const std::vector< fs::path >& get_src_files() const noexcept;
+    const fs::path& get_src() const noexcept;
+    const fs::path& get_header() const noexcept;
+    const fs::path& get_obj() const noexcept;
 
-    [[nodiscard]]
-    const std::vector< fs::path >& get_header_files() const noexcept;
+    bool requires_rebuild() const noexcept;
+  };
 
+  class coup_project
+  {
+  private:
+    std::vector< coup_file > files;
+  public:
+    static coup_project create_project();
+    const std::vector< file >& get_files() const noexcept;
   };
 }
