@@ -20,6 +20,40 @@ namespace coup
      f_path(fp)
   {}
 
+  node::node(const node& other)
+    : f_type(other.f_type),
+      f_path(other.f_path),
+      children(other.children)
+  {}
+
+  node::node(node&& other)
+    : f_type(std::move(other.f_type)),
+      f_path(std::exchange(other.f_path, fs::path{})),
+      children(std::exchange(other.children, {}))
+  {}
+
+  node& node::operator=(const node& other)
+  {
+    if(this != &other)
+    {
+      f_type = other.f_type;
+      f_path = other.f_path;
+      children = other.children;
+    }
+    return *this;
+  }
+
+  node& node::operator=(node&& other)
+  {
+    if(this != &other)
+    {
+      f_type = std::move(other.f_type);
+      f_path = std::exchange(other.f_path, fs::path{});
+      children = std::exchange(other.children, {});
+    }
+    return *this;
+  }
+
   void node::insert(node* v) noexcept
   {
    children.push_back(v);
@@ -63,7 +97,7 @@ namespace coup
       }
     }
 
-    std::queue< node* > q;
+    std::vector< node* > q;
     for(node* u: nodes)
     {
       if(indegree[u] == 0)
@@ -74,17 +108,15 @@ namespace coup
     assert(!q.empty());
 
     std::vector< node* > topological_order;
-    while(!q.empty())
+    int ix = 0;
+    while(ix < q.size())
     {
-      node* u = q.front(); q.pop();
-      topological_order.push_back(u);
-
-      for(node* v: u->children)
+      topological_order.push_back(q[ix++]);
+      for(node* v: topological_order.back()->children)
       {
-        int deps = --indegree[v];
-        if(deps == 0)
+        if(--indegree[v] == 0)
         {
-          q.push(v);
+          q.push_back(v);
         }
       }
     }
