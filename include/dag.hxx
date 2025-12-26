@@ -26,10 +26,18 @@ namespace coup
   private:
     std::vector< node* > nodes;
   public:
+    // construct with vector of nodes
     dag(const std::vector< node* >& S) noexcept;
-    dag(std::vector< node* >&& S) noexcept;
+    
+    // all copy/moves are deleted
+    // only one instance is needed 
+    dag(const dag& G) = delete;
+    dag(dag&& G) = delete;
+    dag& operator=(const dag& G) = delete;
+    dag& operator=(dag&& G) = delete;
     ~dag() noexcept;
+
     std::vector< node* > topological_sort() const noexcept;
+    static dag create_dag();
   };
- 
 }
