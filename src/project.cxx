@@ -44,7 +44,15 @@ namespace coup
     return false;
   }
 
-  coup_project::create_project()
+  coup_project::coup_project(const std::vector< coup_file >& cfiles)
+    : files(cfiles)
+  {}
+
+  coup_project::coup_project(std::vector< coup_file >&& cfiles)
+    : files(std::move(cfiles))
+  {}
+
+  coup_project coup_project::create_project()
   {
     std::optional< fs::path > r_opt = coup::get_root();
     if(!r_opt.has_value())
@@ -52,16 +60,12 @@ namespace coup
       throw std::runtime_error("[ERROR] No root directory could be identified.\n");
     }
     fs::path root = r_opt.value();
-    
-    std::vector< fs::path > src_files;
-    std::vector< fs::path > header_files;
-    std::vector< fs::path > obj_files;
     std::unordered_map< std::string, std::array< fs::path, 3 >> fgroups;
 
     std::thread src_handler([&](){
       std::optional< fs::path > s_opt = coup::get_src_dir(root);
       if(!s_opt.has_value()) { return; }
-      src_files = coup::get_src_files(s_opt.value());
+      std::vector< fs::path > src_files = coup::get_src_files(s_opt.value());
       
       for(const fs::path& src: src_files)
       {
@@ -74,7 +78,7 @@ namespace coup
     std::thread header_handler([&](){
       std::optional< fs::path > i_opt = coup::get_include_dir(root);
       if(!i_opt.has_value()) { return; }
-      header_files = coup::get_header_files(i_opt.value());
+      std::vector< fs::path > header_files = coup::get_header_files(i_opt.value());
 
       for(const fs::path& header: header_files)
       {
@@ -85,7 +89,7 @@ namespace coup
     });
 
     std::thread obj_handler([&](){
-      obj_files = coup::get_obj_files(root);
+        std::vector< fs::path > obj_files = coup::get_obj_files(root);
       
       for(const fs::path& obj: obj_files)
       {
@@ -106,7 +110,7 @@ namespace coup
       cfiles.emplace_back(files[0], files[1], files[2]);
     }
     
-    return coup_project(cfiles);
+    return coup_project(std::move(cfiles));
   }
 
   std::vector< coup_file > coup_project::get_files() const noexcept { return files; }
