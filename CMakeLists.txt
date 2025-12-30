@@ -55,15 +55,26 @@ endif()
 set(COUP_HEADERS
 	include/commands.hxx
 	include/file_tracker.hxx
-	include/project.hxx
 	include/utility.hxx
 	include/config.hxx
 	include/regex.hxx
   include/dag.hxx
   include/parser.hxx
+  include/coup_file.hxx
+  include/coup_project.hxx
 )
-	
-add_executable(coup src/main.cxx src/dag.cxx ${COUP_HEADERS})
+
+set(COUP_SOURCES
+  src/main.cxx
+  src/dag.cxx
+  src/coup_file.cxx
+  src/coup_project.cxx
+)
+
+add_executable(coup
+  ${COUP_SOURCES}
+  ${COUP_HEADERS}
+)
 
 target_include_directories(coup PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/source
