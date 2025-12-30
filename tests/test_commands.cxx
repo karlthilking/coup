@@ -5,7 +5,7 @@
 #include <vector>
 #include <type_traits>
 
-#include "../source/commands.hxx"
+#include "../include/commands.hxx"
 
 using namespace coup;
 

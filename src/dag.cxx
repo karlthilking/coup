@@ -6,6 +6,7 @@
 #include <utility>
 #include <optional>
 #include <stdexcept> // runtime_error
+#include <iostream>
 
 #include "../include/dag.hxx"
 #include "../include/file_tracker.hxx" // get_root, get_src_dir, get_include_dir
@@ -26,7 +27,7 @@ namespace coup
       children(other.children)
   {}
 
-  node::node(node&& other)
+  node::node(node&& other) noexcept
     : f_type(std::move(other.f_type)),
       f_path(std::exchange(other.f_path, fs::path{})),
       children(std::exchange(other.children, {}))
@@ -43,7 +44,7 @@ namespace coup
     return *this;
   }
 
-  node& node::operator=(node&& other)
+  node& node::operator=(node&& other) noexcept
   {
     if(this != &other)
     {
@@ -102,7 +103,7 @@ namespace coup
     {
       if(indegree[u] == 0)
       {
-        q.push(u);
+        q.push_back(u);
       }
     }
     assert(!q.empty());
@@ -124,7 +125,7 @@ namespace coup
     return topological_order;
   }
   
-  static std::vector< node* > 
+  std::vector< node* > 
   dag::merge_node_vecs(std::vector< node* >&& src_nodes,
                        std::vector< node* >&& header_nodes,
                        std::vector< node* >&& obj_nodes)
@@ -144,7 +145,7 @@ namespace coup
     return src_nodes;
   }
 
-  static std::vector< node* >
+  std::vector< node* >
   dag::create_node_vec(std::vector< fs::path >&& src_files,
                        std::vector< fs::path >&& header_files,
                        std::vector< fs::path >&& obj_files)
@@ -155,21 +156,21 @@ namespace coup
 
     for(const fs::path& p: src_files)
     {
-      src_nodes.emplace_back(file_type::source, p);
+      src_nodes.push_back(new node(file_type::source, p));
     }
     for(const fs::path& p: header_files)
     {
-      header_nodes.emplace_back(file_type::header, p);
+      header_nodes.push_back(new node(file_type::header, p));
     }
     for(const fs::path& p: obj_files)
     {
-      obj_nodes.emplace_back(file_type::object, p);
+      obj_nodes.push_back(new node(file_type::object, p));
     }
     
     for(node* u: src_nodes)
     {
       // TODO: implement dependency tracking
-      u->children = get_dependencies(u->f_path);
+      // u->children = get_dependencies(u->f_path);
     }
     
     std::vector< node* > nodes = merge_node_vecs(std::move(src_nodes),
@@ -178,7 +179,7 @@ namespace coup
     return nodes;
   }
   
-  static dag dag::create_dag()
+  dag dag::create_dag()
   {
     // create a DAG instance using file tracker utilities
     // to find all relevant project files

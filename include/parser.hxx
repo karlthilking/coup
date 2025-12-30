@@ -27,10 +27,9 @@ namespace coup
 	inline std::vector< std::string > create_obj_files(const std::vector< std::string >& src_files)
 	{
 		std::vector< std::string > obj_files(src_files.size());
-	
 		for(size_t i{}; i < src_files.size(); ++i)
 		{
-			obj_files[i] = get_obj_file(src_files[i]);
+      obj_files[i] = create_obj_file(src_files[i]);
 		}
 		return obj_files;
 	}

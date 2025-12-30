@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <iostream> // std::cout std::cerr
+#include <thread>
 
 #include "parser.hxx" // convert_to_obj_file(s)
 #include "config.hxx" // CPP macro
@@ -14,31 +15,31 @@ namespace coup {
 
 	constinit static const char* cpp_version = CPP; // c++17, c++20, etc
 
-	int exec_sys_call(const std::string& command)
+	inline int exec_sys_call(const std::string& command)
 	{
 		int result = std::system(command.c_str());
 		return result;
 	}
 
-	void print_usage()
+	inline void print_usage()
 	{
 		std::cout << "To run use coup run\n"
 			<< "To build use coup build\n"
 			<< "To clean use coup clean\n";
 	}
 
-	std::string create_compile_command(std::string_view source_file)
+	inline std::string create_compile_command(std::string_view source_file)
 	{
 		std::string compile_cmd = "g++ -std=";
 		compile_cmd += cpp_version;
 		compile_cmd += " -c ";
 		compile_cmd += source_file;
 		compile_cmd += " -o ";
-		compile_cmd += get_obj_file(source_file);
+		compile_cmd += create_obj_file(source_file);
 		return compile_cmd;
 	}
 	
-	std::string create_link_command(const std::vector< std::string >& object_files)
+	inline std::string create_link_command(const std::vector< std::string >& object_files)
 	{
 		std::string link_cmd = "g++ -std=";
 		link_cmd += cpp_version;
@@ -52,24 +53,31 @@ namespace coup {
 		return link_cmd;
 	}
 
-	std::string create_run_command() { return "./program"; }
+	inline std::string create_run_command() { return "./program"; }
 
-	bool compile(const std::vector< std::string >& source_files)
+	inline bool compile(const std::vector< std::string >& source_files)
 	{
+    bool success = true;
+    std::vector< std::thread > compile_threads;
 		for(const std::string& source: source_files)
-		{
-			const std::string& compile_command(create_compile_command(source));
-			int compilation_result = exec_sys_call(compile_command);
+		{ 
+      compile_threads.emplace_back([&]
+      {
+        const std::string& compile_command(create_compile_command(source));
+        int compilation_result = exec_sys_call(compile_command);
 
-			if(compilation_result)
-			{
-				std::cerr << "Failed to compile " << source << "\n"; return false;
-			}
-		}
-		return true;
+        if(compilation_result)
+        {
+          std::cerr << "Failed to compile " << source << "\n";
+          success = false;
+        }
+      });
+    }
+    for(std::thread& th: compile_threads) { th.join(); }
+		return success;
 	}
 
-	bool link(const std::vector< std::string >& object_files)
+	inline bool link(const std::vector< std::string >& object_files)
 	{
 		const std::string& link_command(create_link_command(object_files));
 
@@ -82,7 +90,7 @@ namespace coup {
 		return true;
 	}
 
-	bool run_executable()
+	inline bool run_executable()
 	{
 		const std::string& run_command(create_run_command());
 
@@ -92,12 +100,12 @@ namespace coup {
 		return true;
 	}
 
-	bool build(const std::vector< std::string >& source_files)
+	inline bool build(const std::vector< std::string >& source_files)
 	{
 		bool compilation_result = compile(source_files);
 		assert(compilation_result == true);
 	
-		std::vector< std::string > obj_files = get_obj_files(source_files);
+		std::vector< std::string > obj_files = create_obj_files(source_files);
 
 		bool link_result = link(obj_files); 
 		assert(link_result == true);
@@ -106,7 +114,7 @@ namespace coup {
 		return true;
 	}
 
-	bool run(const std::vector< std::string >& source_files)
+	inline bool run(const std::vector< std::string >& source_files)
 	{
 		bool build_result = build(source_files);
 		assert(build_result == true);
@@ -118,6 +126,9 @@ namespace coup {
 		return true;
 	}
 	
-	bool clean() { return true; }
+	inline bool clean()
+  {
+    return true;
+  }
 }
 

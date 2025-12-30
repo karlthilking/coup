@@ -9,7 +9,7 @@ namespace fs = std::filesystem;
 
 namespace coup {
 	
-	std::optional< std::string_view > extract_header(std::string_view line) 
+	std::optional< std::string_view > inline extract_header(std::string_view line) 
 	{
 		if(line.empty()) { return std::nullopt; }
 		if(line.find("#include") == std::string_view::npos) { return std::nullopt; }

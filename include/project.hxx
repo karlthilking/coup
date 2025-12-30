@@ -1,10 +1,10 @@
+#pragma once
+
 #include <string>
 #include <vector>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
-
-#include "file_tracker.hxx"
 
 namespace fs = std::filesystem;
 
@@ -24,9 +24,9 @@ namespace coup
     coup_file(const fs::path& s, const fs::path& h, const fs::path& o);
     coup_file(fs::path&& s, fs::path&& h, fs::path&& o);
     
-    bool src_exists() const noexcept;
-    bool header_exists() const noexcept;
-    bool obj_exists() const noexcept;
+    bool s_exists() const noexcept;
+    bool h_exists() const noexcept;
+    bool o_exists() const noexcept;
 
     const fs::path& get_src() const noexcept;
     const fs::path& get_header() const noexcept;
@@ -39,8 +39,10 @@ namespace coup
   {
   private:
     std::vector< coup_file > files;
+    coup_project(const std::vector< coup_file >& cfiles);
+    coup_project(std::vector< coup_file >&& cfiles) noexcept;
   public:
     static coup_project create_project();
-    const std::vector< file >& get_files() const noexcept;
+    const std::vector< coup_file >& get_files() const noexcept;
   };
 }

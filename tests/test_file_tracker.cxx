@@ -155,7 +155,21 @@ TEST_F(file_tracker_test, is_obj_file_false_test)
   EXPECT_FALSE(is_obj_file(h));
 }
 
+/* 
 
+TEST_F(file_tracker_test, test_get_dependencies)
+{
+  std::optional< fs::path > r_opt = get_root();
+  fs::path root = r_opt.value();
+
+  std::optional< fs::path > src_opt = get_src_dir(root);
+  std::optional< fs::path > inc_opt = get_include_dir(root);
+
+  fs::path src_dir = src_opt.value();
+  fs::path inc_dir = inc_opt.value();
+
+}
+*/
 
 
 
