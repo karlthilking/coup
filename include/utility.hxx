@@ -13,21 +13,25 @@
 
 namespace coup {
 
-	constinit static const char* cpp_version = CPP; // c++17, c++20, etc
-
+	constinit static const char* cpp_version = CPP; // holds cpp version as a const char pointer: (e.g. c++17, c++20, etc)
+  
+  // executes system call given a command to execute as a string
+  // returns result code (0 == success, else failure)
 	inline int exec_sys_call(const std::string& command)
 	{
 		int result = std::system(command.c_str());
 		return result;
 	}
-
+  
+  // prints system usage to user
 	inline void print_usage()
 	{
 		std::cout << "To run use coup run\n"
 			<< "To build use coup build\n"
 			<< "To clean use coup clean\n";
 	}
-
+  
+  // creates compile command for a given source file string
 	inline std::string create_compile_command(std::string_view source_file)
 	{
 		std::string compile_cmd = "g++ -std=";
@@ -39,6 +43,7 @@ namespace coup {
 		return compile_cmd;
 	}
 	
+  // creates link command for a collection of object files
 	inline std::string create_link_command(const std::vector< std::string >& object_files)
 	{
 		std::string link_cmd = "g++ -std=";
@@ -52,15 +57,24 @@ namespace coup {
 		link_cmd += " -o program";
 		return link_cmd;
 	}
+  
+  // creates command to run project executable
+	inline std::string create_run_command()
+  {
+    return "./program";
+  }
 
-	inline std::string create_run_command() { return "./program"; }
-
+  // compiles a collection of source files with multiple threads
+  // each thread creates a compile command string and executes a system call to compile a source file
+  // exists and returns false if any source file compilation fails, otherwise returns true on success
 	inline bool compile(const std::vector< std::string >& source_files)
 	{
     bool success = true;
     std::vector< std::thread > compile_threads;
+
 		for(const std::string& source: source_files)
 		{ 
+      if(!success) { break; }
       compile_threads.emplace_back([&]
       {
         const std::string& compile_command(create_compile_command(source));
@@ -73,10 +87,13 @@ namespace coup {
         }
       });
     }
+
     for(std::thread& th: compile_threads) { th.join(); }
 		return success;
 	}
-
+  
+  // obtains string command to link a collection of object files and executes a system call to link
+  // return true if linking is successful, false on failure
 	inline bool link(const std::vector< std::string >& object_files)
 	{
 		const std::string& link_command(create_link_command(object_files));
@@ -89,7 +106,9 @@ namespace coup {
 		}
 		return true;
 	}
-
+  
+  // obtains string command to run the project executable and executes system call to run
+  // returns true if the executable runs (does not access runtime errors only execution), false on failure 
 	inline bool run_executable()
 	{
 		const std::string& run_command(create_run_command());
@@ -99,7 +118,9 @@ namespace coup {
 		if(execution_result) { std::cerr << "Runtime error\n"; return false; }
 		return true;
 	}
-
+  
+  // compiles a collection of source files and links resulting object files after compiling
+  // returns true if compiling and linking are successful, false otherwise
 	inline bool build(const std::vector< std::string >& source_files)
 	{
 		bool compilation_result = compile(source_files);
@@ -113,7 +134,9 @@ namespace coup {
 		std::cout << "Built all source files successfully\n";
 		return true;
 	}
-
+  
+  // compiles source files, links resulting object files, and run output executable
+  // returns true if each step is successful, false otherwise
 	inline bool run(const std::vector< std::string >& source_files)
 	{
 		bool build_result = build(source_files);
@@ -128,7 +151,7 @@ namespace coup {
 	
 	inline bool clean()
   {
-    return true;
+    return true; // TODO
   }
 }
 
