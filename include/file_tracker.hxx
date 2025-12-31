@@ -1,22 +1,22 @@
 #pragma once
 
-#include <cassert>    // assert
-#include <filesystem> // path, last_write_time, current_path, parent_path, exists
-#include <iostream>   // cerr
+#include <cassert>     // assert
+#include <filesystem>  // path, last_write_time, current_path, parent_path, exists
+#include <iostream>    // cerr
 #include <optional>
 #include <string_view>
 #include <vector>
 
-#include "parser.hxx" // get_stem, get_extension
-#include "regex.hxx"  // extract_header
+#include "parser.hxx"  // get_stem, get_extension
+#include "regex.hxx"   // extract_header
 
 namespace fs = std::filesystem;
 namespace coup {
 // discovers project root directory
 // returns root directory path or empty if no root can be found
 // a root is defined as a directory with either a src or include directory
-inline std::optional<fs::path>
-get_root(const fs::path &p = fs::current_path()) {
+inline std::optional<fs::path> get_root(
+    const fs::path& p = fs::current_path()) {
   fs::path cur = fs::absolute(p);
   assert(fs::exists(p));
 
@@ -35,7 +35,7 @@ get_root(const fs::path &p = fs::current_path()) {
 
 // discovers source directory from project root
 // returns src directory path or empty if no source directory exists
-inline std::optional<fs::path> get_src_dir(const fs::path &root) {
+inline std::optional<fs::path> get_src_dir(const fs::path& root) {
   if (fs::exists(root / "src")) {
     return fs::path(root / "src");
   }
@@ -44,7 +44,7 @@ inline std::optional<fs::path> get_src_dir(const fs::path &root) {
 
 // discovers include directory from project root
 // returns include directory path or empty if no include directory exists
-inline std::optional<fs::path> get_include_dir(const fs::path &root) {
+inline std::optional<fs::path> get_include_dir(const fs::path& root) {
   if (fs::exists(root / "include")) {
     return fs::path(root / "include");
   }
@@ -52,7 +52,7 @@ inline std::optional<fs::path> get_include_dir(const fs::path &root) {
 }
 
 // evaluates if a std::filesystem::path is a source file
-[[nodiscard]] inline bool is_src_file(const fs::path &file) {
+[[nodiscard]] inline bool is_src_file(const fs::path& file) {
   std::string filepath = file.string();
   std::optional<std::string_view> ext_opt = get_extension(filepath);
 
@@ -69,7 +69,7 @@ inline std::optional<fs::path> get_include_dir(const fs::path &root) {
 }
 
 // evaluates if a std::filesystem::path is a header file
-[[nodiscard]] inline bool is_header_file(const fs::path &file) {
+[[nodiscard]] inline bool is_header_file(const fs::path& file) {
   std::string filepath = file.string();
   std::optional<std::string_view> ext_opt = get_extension(filepath);
 
@@ -87,7 +87,7 @@ inline std::optional<fs::path> get_include_dir(const fs::path &root) {
 
 // evaluates if a std::filesystem::path is an object file
 [[nodiscard]]
-inline bool is_obj_file(const fs::path &file) {
+inline bool is_obj_file(const fs::path& file) {
   std::string filepath = file.string();
   std::optional<std::string_view> ext_opt = get_extension(filepath);
 
@@ -104,10 +104,10 @@ inline bool is_obj_file(const fs::path &file) {
 
 // discover all source files from project src directory
 [[nodiscard]]
-inline std::vector<fs::path> get_src_files(const fs::path &src_dir) {
+inline std::vector<fs::path> get_src_files(const fs::path& src_dir) {
   std::vector<fs::path> src_files;
 
-  for (const auto &entry : fs::recursive_directory_iterator(src_dir)) {
+  for (const auto& entry : fs::recursive_directory_iterator(src_dir)) {
     if (!entry.is_regular_file()) {
       continue;
     }
@@ -133,10 +133,10 @@ inline std::vector<fs::path> get_src_files(const fs::path &src_dir) {
 
 // discover all header files from project include directory
 [[nodiscard]]
-inline std::vector<fs::path> get_header_files(const fs::path &include_dir) {
+inline std::vector<fs::path> get_header_files(const fs::path& include_dir) {
   std::vector<fs::path> header_files;
 
-  for (const auto &entry : fs::recursive_directory_iterator(include_dir)) {
+  for (const auto& entry : fs::recursive_directory_iterator(include_dir)) {
     if (!entry.is_regular_file()) {
       continue;
     }
@@ -161,9 +161,9 @@ inline std::vector<fs::path> get_header_files(const fs::path &include_dir) {
 
 // discover all object files descending from project root
 [[nodiscard]]
-inline std::vector<fs::path> get_obj_files(const fs::path &root) {
+inline std::vector<fs::path> get_obj_files(const fs::path& root) {
   std::vector<fs::path> obj_files;
-  for (const auto &entry : fs::recursive_directory_iterator(root)) {
+  for (const auto& entry : fs::recursive_directory_iterator(root)) {
     if (!entry.is_regular_file()) {
       continue;
     }
@@ -187,7 +187,7 @@ inline fs::path get_full_path(std::string_view filename) {
 
 // get absolute path of source file in src directory
 inline fs::path get_abs_src(std::string_view src_name,
-                            const fs::path &src_dir) {
+                            const fs::path& src_dir) {
   fs::path abs_src_path(src_dir / src_name);
   assert(fs::exists(abs_src_path));
   return abs_src_path;
@@ -195,9 +195,9 @@ inline fs::path get_abs_src(std::string_view src_name,
 
 // get absolute path of header file in include directory
 inline fs::path get_abs_header(std::string_view header_name,
-                               const fs::path &include_dir) {
+                               const fs::path& include_dir) {
   fs::path abs_header_path(include_dir / header_name);
   assert(fs::exists(abs_header_path));
   return abs_header_path;
 }
-} // namespace coup
+}  // namespace coup

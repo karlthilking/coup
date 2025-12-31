@@ -1,25 +1,25 @@
 #pragma once
 
-#include <cassert>  // assert
-#include <cstdlib>  // std::system
-#include <iostream> // std::cout std::cerr
+#include <cassert>   // assert
+#include <cstdlib>   // std::system
+#include <iostream>  // std::cout std::cerr
 #include <string>
 #include <string_view>
 #include <thread>
 #include <vector>
 
-#include "config.hxx" // CPP macro
-#include "parser.hxx" // sv_cstr, create_obj_file, create_obj_files
+#include "config.hxx"  // CPP macro
+#include "parser.hxx"  // sv_cstr, create_obj_file, create_obj_files
 
 namespace coup {
 
-constinit static const char *cpp_version =
-    CPP; // holds cpp version as a const char pointer: (e.g. c++17, c++20, etc)
+constinit static const char* cpp_version =
+    CPP;  // holds cpp version as a const char pointer: (e.g. c++17, c++20, etc)
 
 // executes a system call given by a command string
 // converts string to a const char pointer
 // returns result code (0 == success, else failure)
-inline int system_call(const std::string &command) {
+inline int system_call(const std::string& command) {
   int result = std::system(command.c_str());
   return result;
 }
@@ -51,12 +51,12 @@ inline std::string create_compile_command(std::string_view source_file) {
 }
 
 // creates link command for a collection of object files
-inline std::string
-create_link_command(const std::vector<std::string> &object_files) {
+inline std::string create_link_command(
+    const std::vector<std::string>& object_files) {
   std::string link_cmd = "g++ -std=";
   link_cmd += cpp_version;
 
-  for (const std::string &obj : object_files) {
+  for (const std::string& obj : object_files) {
     link_cmd += " " + obj;
   }
 
@@ -71,16 +71,16 @@ inline std::string create_run_command() { return "./program"; }
 // each thread creates a compile command string and executes a system call to
 // compile a source file exists and returns false if any source file compilation
 // fails, otherwise returns true on success
-inline bool compile(const std::vector<std::string> &source_files) {
+inline bool compile(const std::vector<std::string>& source_files) {
   bool success = true;
   std::vector<std::thread> compile_threads;
 
-  for (const std::string &source : source_files) {
+  for (const std::string& source : source_files) {
     if (!success) {
       break;
     }
     compile_threads.emplace_back([&] {
-      const std::string &compile_command(create_compile_command(source));
+      const std::string& compile_command(create_compile_command(source));
       int compilation_result = system_call(compile_command);
 
       if (compilation_result) {
@@ -90,7 +90,7 @@ inline bool compile(const std::vector<std::string> &source_files) {
     });
   }
 
-  for (std::thread &th : compile_threads) {
+  for (std::thread& th : compile_threads) {
     th.join();
   }
   return success;
@@ -98,8 +98,8 @@ inline bool compile(const std::vector<std::string> &source_files) {
 
 // obtains string command to link a collection of object files and executes a
 // system call to link return true if linking is successful, false on failure
-inline bool link(const std::vector<std::string> &object_files) {
-  const std::string &link_command(create_link_command(object_files));
+inline bool link(const std::vector<std::string>& object_files) {
+  const std::string& link_command(create_link_command(object_files));
 
   int linking_result = system_call(link_command);
 
@@ -114,7 +114,7 @@ inline bool link(const std::vector<std::string> &object_files) {
 // to run returns true if the executable runs (does not access runtime errors
 // only execution), false on failure
 inline bool run_executable() {
-  const std::string &run_command(create_run_command());
+  const std::string& run_command(create_run_command());
 
   int execution_result = system_call(run_command);
 
@@ -128,7 +128,7 @@ inline bool run_executable() {
 // compiles a collection of source files and links resulting object files after
 // compiling returns true if compiling and linking are successful, false
 // otherwise
-inline bool build(const std::vector<std::string> &source_files) {
+inline bool build(const std::vector<std::string>& source_files) {
   bool compilation_result = compile(source_files);
   assert(compilation_result == true);
 
@@ -143,7 +143,7 @@ inline bool build(const std::vector<std::string> &source_files) {
 
 // compiles source files, links resulting object files, and run output
 // executable returns true if each step is successful, false otherwise
-inline bool run(const std::vector<std::string> &source_files) {
+inline bool run(const std::vector<std::string>& source_files) {
   bool build_result = build(source_files);
   assert(build_result == true);
 
@@ -155,6 +155,6 @@ inline bool run(const std::vector<std::string> &source_files) {
 }
 
 inline bool clean() {
-  return true; // TODO
+  return true;  // TODO
 }
-} // namespace coup
+}  // namespace coup
