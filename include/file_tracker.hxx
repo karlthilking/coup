@@ -1,22 +1,21 @@
 #pragma once
 
 #include <filesystem> // path, last_write_time, current_path, parent_path, exists
-#include <fstream> // ifstream
 #include <vector>
 #include <string_view>
 #include <optional>
 #include <cassert> // assert
-#include <stdexcept> // runtime_error
-#include <unordered_map>
-#include <algorithm> // find
+#include <iostream> // cerr
 
 #include "regex.hxx" // extract_header
 #include "parser.hxx" // get_stem, get_extension
 
 namespace fs = std::filesystem; 
-
 namespace coup 
 {
+  // discovers project root directory
+  // returns root directory path or empty if no root can be found
+  // a root is defined as a directory with either a src or include directory
   inline std::optional< fs::path > get_root(const fs::path& p = fs::current_path())
   {
     fs::path cur = fs::absolute(p);
@@ -34,7 +33,9 @@ namespace coup
     }
     return std::nullopt;
   }
-
+  
+  // discovers source directory from project root
+  // returns src directory path or empty if no source directory exists
   inline std::optional< fs::path > get_src_dir(const fs::path& root)
   {
     if(fs::exists(root / "src"))
@@ -43,7 +44,9 @@ namespace coup
     }
     return std::nullopt;
   }
-
+  
+  // discovers include directory from project root
+  // returns include directory path or empty if no include directory exists
   inline std::optional< fs::path > get_include_dir(const fs::path& root)
   {
     if(fs::exists(root / "include"))
@@ -53,6 +56,7 @@ namespace coup
     return std::nullopt;
   }
 
+  // evaluates if a std::filesystem::path is a source file
   [[nodiscard]] inline bool is_src_file(const fs::path& file)
   {
     std::string filepath = file.string();
@@ -72,6 +76,7 @@ namespace coup
 		return false;
 	}
   
+  // evaluates if a std::filesystem::path is a header file
   [[nodiscard]] inline bool is_header_file(const fs::path& file)
   {
     std::string filepath = file.string();
@@ -91,7 +96,8 @@ namespace coup
 		}
     return false;
 	}
-
+  
+  // evaluates if a std::filesystem::path is an object file
   [[nodiscard]]
   inline bool is_obj_file(const fs::path& file)
   {
@@ -104,7 +110,8 @@ namespace coup
     if(file_ext == "o" || file_ext == "obj") { return true; }
     return false;
   }
-		
+	
+  // discover all source files from project src directory
 	[[nodiscard]]
   inline std::vector< fs::path > get_src_files(const fs::path& src_dir)
   {
@@ -134,6 +141,7 @@ namespace coup
     return src_files;
   }
   
+  // discover all header files from project include directory
   [[nodiscard]] 
   inline std::vector< fs::path > get_header_files(const fs::path& include_dir)
   {
@@ -162,7 +170,8 @@ namespace coup
     }
     return header_files;
   }
-
+  
+  // discover all object files descending from project root
   [[nodiscard]]
   inline std::vector< fs::path > get_obj_files(const fs::path& root)
   { 
@@ -182,9 +191,27 @@ namespace coup
     return obj_files;
   }
 
+  // std::filesystem::absolute wrapper function
   inline fs::path get_full_path(std::string_view filename)
   {
-    fs::path p(filename);
-    return fs::absolute(p);
+    return fs::absolute(fs::path(filename));
+  }
+  
+  // get absolute path of source file in src directory
+  inline fs::path get_abs_src(std::string_view src_name,
+                              const fs::path& src_dir)
+  {
+    fs::path abs_src_path(src_dir / src_name);
+    assert(fs::exists(abs_src_path));
+    return abs_src_path;
+  }
+  
+  // get absolute path of header file in include directory
+  inline fs::path get_abs_header(std::string_view header_name,
+                                 const fs::path& include_dir)
+  {
+    fs::path abs_header_path(include_dir / header_name);
+    assert(fs::exists(abs_header_path));
+    return abs_header_path;
   }
 }
