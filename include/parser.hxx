@@ -67,4 +67,13 @@ namespace coup
     
     return file.substr(last_slash_pos + 1);
   }
+
+  inline const char* sv_cstr(std::string_view sv)
+  {
+    char buffer[256];
+    std::memcpy(buffer, sv.data(), sv.size());
+    buffer[sv.size()] = '\0';
+    const char* cstr = buffer;
+    return cstr;
+  }
 }

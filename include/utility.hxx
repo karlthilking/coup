@@ -8,20 +8,30 @@
 #include <iostream> // std::cout std::cerr
 #include <thread>
 
-#include "parser.hxx" // convert_to_obj_file(s)
+#include "parser.hxx" // sv_cstr, create_obj_file, create_obj_files
 #include "config.hxx" // CPP macro
 
 namespace coup {
 
 	constinit static const char* cpp_version = CPP; // holds cpp version as a const char pointer: (e.g. c++17, c++20, etc)
   
-  // executes system call given a command to execute as a string
+  // executes a system call given by a command string
+  // converts string to a const char pointer
   // returns result code (0 == success, else failure)
-	inline int exec_sys_call(const std::string& command)
+	inline int system_call(const std::string& command)
 	{
 		int result = std::system(command.c_str());
 		return result;
 	}
+  
+  // executes a system call given a command string view
+  // converts string view to a const char pointer
+  // returns result code
+  inline int system_call(std::string_view command)
+  {
+    int result = std::system(sv_cstr(command));
+    return result;
+  }
   
   // prints system usage to user
 	inline void print_usage()
@@ -78,7 +88,7 @@ namespace coup {
       compile_threads.emplace_back([&]
       {
         const std::string& compile_command(create_compile_command(source));
-        int compilation_result = exec_sys_call(compile_command);
+        int compilation_result = system_call(compile_command);
 
         if(compilation_result)
         {
@@ -98,7 +108,7 @@ namespace coup {
 	{
 		const std::string& link_command(create_link_command(object_files));
 
-		int linking_result = exec_sys_call(link_command);
+		int linking_result = system_call(link_command);
 
 		if(linking_result)
 		{
@@ -113,7 +123,7 @@ namespace coup {
 	{
 		const std::string& run_command(create_run_command());
 
-		int execution_result = exec_sys_call(run_command);
+		int execution_result = system_call(run_command);
 
 		if(execution_result) { std::cerr << "Runtime error\n"; return false; }
 		return true;
