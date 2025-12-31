@@ -1,10 +1,15 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <string_view>
+#include <optional>
+#include <vector>
+#include <filesystem>
 
 #include "../include/parser.hxx"
+#include "../include/file_tracker.hxx"
 
 using namespace coup;
+namespace fs = std::filesystem;
 
 class parser_test : public testing::Test
 {
@@ -24,6 +29,7 @@ protected:
   std::string fp2 = "include/header.h";
   std::string fp3 = "CMakeLists.txt";
   std::string fp4 = "tests/test_file.cpp";
+
 	void SetUp() override {}
 };
 
@@ -166,40 +172,42 @@ TEST_F(parser_test, get_filename_none)
   EXPECT_FALSE(opt.has_value());
 }
 
-TEST_F(parser_test, get_filename_values_exist)
+TEST_F(parser_test, test_abs_src_getter)
 {
-  // assert that shortened filenames are recognized by std::filesystem
   std::optional< fs::path > r_opt = get_root();
   fs::path root = r_opt.value();
-
+  
   std::optional< fs::path > src_dir_opt = get_src_dir(root);
-  std::optional< fs::path > inc_dir_opt = get_include_dir(root);
-
-  src_dir = src_dir_opt.value();
-  include_dir = inc_dir_opt.value();
+  fs::path src_dir = src_dir_opt.value();
 
   std::vector< fs::path > src_files = get_src_files(src_dir);
-  std::vector< fs::path > header_files = get_header_files(include_dir);
-
   for(const fs::path& src: src_files)
   {
     std::string src_path = src.string();
-    std::optional< std::string_view > opt = get_filename(src_path);
-    EXPECT_TRUE(opt.has_value());
+    std::optional< std::string_view > src_name_opt = get_filename(src_path);
+    std::string_view src_name = src_name_opt.value();
 
-    std::string_view src_name = opt.value();
-    fs::path src_path_short(src_name);
-    EXPECT_TRUE(fs::exists(src_path_short));
+    fs::path src_abs_path = get_abs_src(src_name, src_dir);
+    EXPECT_TRUE(fs::exists(src_abs_path));
   }
+}
 
+TEST_F(parser_test, test_abs_header_getter)
+{
+  std::optional< fs::path > r_opt = get_root();
+  fs::path root = r_opt.value();
+
+  std::optional< fs::path > include_dir_opt = get_include_dir(root);
+  fs::path include_dir = include_dir_opt.value();
+
+  std::vector< fs::path > header_files = get_header_files(include_dir);
   for(const fs::path& header: header_files)
   {
     std::string header_path = header.string();
-    std::optional< std::string_view > opt = get_filename(header_path);
-    EXPECT_TRUE(opt.has_value());
+    std::optional< std::string_view > header_name_opt = get_filename(header_path);
+    std::string_view header_name = header_name_opt.value();
 
-    std::string_view header_name = opt.value();
-    fs::path header_path_short(header_name);
-    EXPECT_TRUE(fs::exists(header_path_short));
+    fs::path header_abs_path = get_abs_header(header_name, include_dir);
+    EXPECT_TRUE(fs::exists(header_abs_path));
   }
 }
