@@ -177,6 +177,7 @@ bool is_obj_file(const fs::path& obj) {
   }
 }
 
+// returns all source files present in the src directory
 std::vector<fs::path> get_src_files(const fs::path& src_dir) {
   assert(fs::exists(src_dir));
   std::vector<fs::path> src_files;
@@ -193,6 +194,7 @@ std::vector<fs::path> get_src_files(const fs::path& src_dir) {
   return src_files;
 }
 
+// returns all header files present in the include directory
 std::vector<fs::path> get_header_files(const fs::path& include_dir) {
   assert(fs::exists(include_dir));
   std::vector<fs::path> header_files;
@@ -209,6 +211,7 @@ std::vector<fs::path> get_header_files(const fs::path& include_dir) {
   return header_files;
 }
 
+// returns all object files present in the out directory
 std::vector<fs::path> get_obj_files(const fs::path& out_dir) {
   assert(fs::exists(out_dir));
   std::vector<fs::path> obj_files;
@@ -225,42 +228,46 @@ std::vector<fs::path> get_obj_files(const fs::path& out_dir) {
   return obj_files;
 }
 
+// make a corresponding dependency file for a source file
 fs::path make_dep_file(const fs::path& src_file) {
   return fs::path{replace_extension(src_file, "d")};
 }
 
+// make a corresponding object file for a source file
 fs::path make_obj_file(const fs::path& src_file) {
   return fs::path{replace_extension(src_file, "o")};
 }
 
-std::vector<std::string> parse_dependency_file(const fs::path& dep_file) {
-  std::ifstream deps(dep_file);
+// returns a string representation of file contents
+std::string file_to_string(const fs::path& file) {
+  std::ifstream input(file);
   std::string line;
   
-  std::string deps_content;
-  while (std::getline(deps, line)) {
-    deps_content += line;
+  std::string s;
+  while (std::getline(input, line)) {
+    s += line;
   }
-  
-  std::vector<std::string> parsed_deps;
-  std::size_t colon_pos = deps_content.find(':');
-  if (colon_pos != std::string::npos) {
-    deps_content = deps_content.substr(colon_pos + 1);
-    
-    
-    std::istringstream iss(deps_content);
-    std::string dep;
+  return s;
+}
 
-    while (iss >> dep) {
-      if (dep == "\\" || dep.empty()) {
-        continue;
-      } else {
-        parsed_deps.push_back(dep);
-      }
+// parses dependency file contents to find project header dependencies
+// returns a list of header file names listed in the dependency file
+std::vector<std::string> parse_dependency_file(const fs::path& dep_file) {
+  std::string dep_file_content = file_to_string(dep_file);
+
+  std::vector<std::string> dependencies;
+  std::istringstream iss(dep_file_content);
+  std::string current;
+
+  while (iss >> current) {
+    if (current.back() == ':' || current == "\\" || current.empty()) {
+      continue;
+    } else {
+      dependencies.push_back(current);
     }
   }
 
-  return parsed_deps;
+  return dependencies;
 }
 
 } // namespace coup
