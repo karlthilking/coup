@@ -1,16 +1,45 @@
-#include <cstdlib>
+#include <iostream>
 #include <string>
+#include <stdexcept>
 
-#include "../include/commands.hxx"  // command_type, build_command, run_command, clean_command, execute_cmd, create_command
+constexpr int EXIT_SUCCESS = 0;
+constexpr int EXIT_ERROR = 1;
+constexpr int EXIT_USAGE_ERROR = 2;
+constexpr int EXIT_FATAL = 3;
 
 int main(int argc, char** argv) {
-  if (argc < 1) {
-    return 1;
+  if (argc < 2) {
+    coup::print_usage();
+    return EXIT_USAGE_ERROR;
   }
 
-  std::string cmd_str = argv[1];
-  coup::command_type cmd = coup::create_command(cmd_str);
-  bool result = coup::execute_cmd(cmd);
+  try {
+    const char* arg = argv[1];
 
-  return 0;
+    coup::command_type cmd = coup::create_command(arg);
+    coup::project proj = coup::project::create_project();
+
+    proj.execute(cmd);
+  }
+  catch (const std::runtime_error& e)
+  {
+    std::cerr << "[Runtime Error]: " << e.what() << "\n";
+    return EXIT_ERROR;
+  }
+  catch (const std::invalid_argument& e)
+  {
+    std::cerr << "[Invalid Argument]: " << e.what() << "\n";
+    return EXIT_USAGE_ERROR;
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "[Error]: " << e.what() << "\n";
+    return EXIT_ERROR;
+  }
+  catch (...)
+  {
+    std::cerr << "[Fatal Error] Exiting...\n";
+    return EXIT_FATAL;
+  }
+  return EXIT_SUCCESS;
 }
