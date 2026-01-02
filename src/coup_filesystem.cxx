@@ -178,7 +178,7 @@ bool is_obj_file(const fs::path& obj) {
 }
 
 // returns all source files present in the src directory
-std::vector<fs::path> get_src_files(const fs::path& src_dir) {
+std::vector<fs::path> find_src_files(const fs::path& src_dir) {
   assert(fs::exists(src_dir));
   std::vector<fs::path> src_files;
 
@@ -195,7 +195,7 @@ std::vector<fs::path> get_src_files(const fs::path& src_dir) {
 }
 
 // returns all header files present in the include directory
-std::vector<fs::path> get_header_files(const fs::path& include_dir) {
+std::vector<fs::path> find_header_files(const fs::path& include_dir) {
   assert(fs::exists(include_dir));
   std::vector<fs::path> header_files;
 
@@ -212,7 +212,7 @@ std::vector<fs::path> get_header_files(const fs::path& include_dir) {
 }
 
 // returns all object files present in the out directory
-std::vector<fs::path> get_obj_files(const fs::path& out_dir) {
+std::vector<fs::path> find_obj_files(const fs::path& out_dir) {
   assert(fs::exists(out_dir));
   std::vector<fs::path> obj_files;
 
@@ -226,6 +226,36 @@ std::vector<fs::path> get_obj_files(const fs::path& out_dir) {
     }
   }
   return obj_files;
+}
+
+// handles obtaining source directory and getting source files from directory
+std::vector<fs::path> get_src_files(const fs::path& root) {
+  fs::path src_dir = get_src_dir(root);
+  if (src_dir.empty() || !fs::exists(src_dir)) {
+    return {};
+  } else {
+    return find_src_files(src_dir);
+  }
+}
+
+// handles obtaining include directory and extracting header files
+std::vector<fs::path> get_header_files(const fs::path& root) {
+  fs::path include_dir = get_include_dir(root);
+  if (include_dir.empty() || !fs::exists(include_dir)) {
+    return {};
+  } else {
+    return find_header_files(include_dir);
+  }
+}
+
+// handles obtaining out directory and extracting object files
+std::vector<fs::path> get_obj_fiels(const fs::path& root) {
+  fs::path out_dir = get_out_dir(root);
+  if (out_dir.empty() || !fs::exists(out_dir)) {
+    return {};
+  } else {
+    return find_obj_files(out_dir);
+  }
 }
 
 // make a corresponding dependency file for a source file
