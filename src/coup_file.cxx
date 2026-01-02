@@ -1,6 +1,5 @@
 #include <filesystem>
 #include <vector>
-#include <memory>
 #include "../include/coup_file.hxx"
 
 namespace fs = std::filesystem;
@@ -43,9 +42,30 @@ namespace coup {
   const fs::path& coup_file::get_obj() const noexcept { return obj_file; }
   const fs::path& coup_file::get_dep() const noexcept { return dep_file; }
   
+  // set a file to a new path variable
+  void coup_file::set_src(const fs::path& new_src) noexcept {
+    if (!src_exists)
+      src_exists = true;
+    src_file = new_src;
+  }
+  void coup_file::set_header(const fs::path& new_header) noexcept {
+    if (!header_exists)
+      header_exists = true;
+    header_file = new_header;
+  }
+  void coup_file::set_obj(const fs::path& new_obj) noexcept {
+    if (!obj_exists)
+      obj_exists = true;
+    obj_file = new_obj;
+  }
+  void coup_file::set_dep(const fs::path& new_dep) noexcept {
+    if (!dep_exists) 
+      dep_exists = true;
+    dep_file = new_dep;
+  }
+  
   // add a dependency to the coup_file object's list
-  void coup_file::add_dependency(coup_file* dep) noexcept
-  {
+  void coup_file::add_dependency(coup_file* dep) noexcept {
     dependencies.push_back(dep);
   }
   
@@ -80,6 +100,22 @@ namespace coup {
         }
         return false;
       }
+    }
+  }
+  
+  // Returns true if dependency file needs to be set or updated
+  bool requires_dep_update() const noexcept {
+    if (!src_exists) {
+      return false;
+    } else if (!dep_exists) {
+      return true;
+    } else {
+      fs::file_time_type dep_update = fs::last_write_time(dep_file);
+      if (dep_update < fs::last_write_time(src_file) ||
+          (header_exists && dep_update < fs::last_write_time(header_file))) {
+        return true;
+      }
+      return false;
     }
   }
 } // namespace coup

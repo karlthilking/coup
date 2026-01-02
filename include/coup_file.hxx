@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include <vector>
-#include <memory>
 
 namespace fs = std::filesystem;
 namespace coup {
@@ -37,13 +36,21 @@ public:
   const fs::path& get_header() const noexcept;
   const fs::path& get_obj() const noexcept;
   const fs::path& get_dep() const noexcept;
-  const std::vector<std::shared_ptr<coup_file>> get_dependencies() const noexcept;
   
+  // setters
+  void set_src() noexcept;
+  void set_header() noexcept;
+  void set_obj() noexcept;
+  void set_dep() noexcept;
+
   // add dependencies to a coup_file object
   void add_dependency(coup_file* dep) noexcept;
   
-  // returns true if a coup_file's source file requires recompilation, false otherwise
+  // returns true if source file requires recompilation, false otherwise
   bool requires_recompile() const noexcept;
+  
+  // returns true if dependency file needs to be udpated
+  bool requires_dep_update() const noexpcet;
 };
 
 } // namespace coup
