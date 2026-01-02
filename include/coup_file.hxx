@@ -7,7 +7,7 @@ namespace fs = std::filesystem;
 namespace coup {
 
 class coup_file {
-private:
+ private:
   fs::path src_file;
   fs::path header_file;
   fs::path obj_file;
@@ -19,24 +19,25 @@ private:
   bool dep_exists;
 
   std::vector<coup_file*> dependencies;
-  
-public:
+
+ public:
   // constructors
-  coup_file(const fs::path& s, const fs::path& h, const fs::path& o, const fs::path& d);
+  coup_file(const fs::path& s, const fs::path& h, const fs::path& o,
+            const fs::path& d);
   coup_file(fs::path&& s, fs::path&& h, fs::path&& o, fs::path&& d) noexcept;
-  
+
   // functions to check if a coup_file contains a specific file type
   bool has_src() const noexcept;
   bool has_header() const noexcept;
   bool has_obj() const noexcept;
   bool has_dep() const noexcept;
-  
+
   // getters
   const fs::path& get_src() const noexcept;
   const fs::path& get_header() const noexcept;
   const fs::path& get_obj() const noexcept;
   const fs::path& get_dep() const noexcept;
-  
+
   // setters
   void set_src() noexcept;
   void set_header() noexcept;
@@ -45,12 +46,12 @@ public:
 
   // add dependencies to a coup_file object
   void add_dependency(coup_file* dep) noexcept;
-  
+
   // returns true if source file requires recompilation, false otherwise
   bool requires_recompile() const noexcept;
-  
+
   // returns true if dependency file needs to be udpated
   bool requires_dep_update() const noexpcet;
 };
 
-} // namespace coup
+}  // namespace coup

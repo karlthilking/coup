@@ -1,11 +1,13 @@
+#include "../include/coup_project.hxx"
+
+#include <algorithm>
 #include <filesystem>
-#include <vector>
-#include <utility>
 #include <stdexcept>
 #include <thread>
 #include <unordered_map>
-#include <algorithm>
-#include "../include/coup_project.hxx"
+#include <utility>
+#include <vector>
+
 #include "../include/coup_file.hxx"
 #include "../include/coup_filesystem.hxx"
 #include "../include/coup_system.hxx"
@@ -14,16 +16,14 @@ namespace fs = std::filesystem;
 namespace coup {
 
 coup_project::coup_project(const std::vector<coup_file>& files)
-  : coup_files(files)
-{}
+    : coup_files(files) {}
 
 coup_project::coup_project(std::vector<coup_file>&& files) noexcept
-  : coup_files(std::move(files))
-{}
+    : coup_files(std::move(files)) {}
 
- /* Obtains all source, header, and object files, associated by filestem
-  * Returns a coup_project instance to the caller with properly initialized
-  * coup_file instances
+/* Obtains all source, header, and object files, associated by filestem
+ * Returns a coup_project instance to the caller with properly initialized
+ * coup_file instances
  */
 coup_project coup_project::make_project() {
   // throws if no root is found
@@ -31,7 +31,7 @@ coup_project coup_project::make_project() {
 
   // map of filename stem to associated paths (source, header, object)
   std::unordered_map<std::string, std::array<fs::path, 3>> file_groups;
-  
+
   std::thread src_handler([this] {
     auto src_files = get_src_files(root_dir);
     for (const fs::path& src : src_files) {
@@ -59,7 +59,7 @@ coup_project coup_project::make_project() {
   src_handler.join();
   header_handler.join();
   obj_handler.join();
-  
+
   std::vector<coup_file> coup_files;
   for (const auto& [name, files] : file_groups) {
     coup_files.emplace_back(files[0], files[1], files[2]);
@@ -81,7 +81,7 @@ std::vector<fs::path> get_project_src_files() const noexcept {
 }
 
 /*  Set/update dependency information for each coup file
- *  
+ *
  *  For every coup_file that:
  *    - Has no generated dependency file or
  *    - Has an outdated dependency file
@@ -100,5 +100,4 @@ void set_dependencies() noexcept {
     }
   }
 }
-} // namespace coup
-
+}  // namespace coup

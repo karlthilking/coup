@@ -1,6 +1,6 @@
 #include <iostream>
-#include <string>
 #include <stdexcept>
+#include <string>
 
 constexpr int EXIT_SUCCESS = 0;
 constexpr int EXIT_ERROR = 1;
@@ -20,24 +20,16 @@ int main(int argc, char** argv) {
     coup::project proj = coup::project::create_project();
 
     proj.execute(cmd);
-  }
-  catch (const std::runtime_error& e)
-  {
+  } catch (const std::runtime_error& e) {
     std::cerr << "[Runtime Error]: " << e.what() << "\n";
     return EXIT_ERROR;
-  }
-  catch (const std::invalid_argument& e)
-  {
+  } catch (const std::invalid_argument& e) {
     std::cerr << "[Invalid Argument]: " << e.what() << "\n";
     return EXIT_USAGE_ERROR;
-  }
-  catch (const std::exception& e)
-  {
+  } catch (const std::exception& e) {
     std::cerr << "[Error]: " << e.what() << "\n";
     return EXIT_ERROR;
-  }
-  catch (...)
-  {
+  } catch (...) {
     std::cerr << "[Fatal Error] Exiting...\n";
     return EXIT_FATAL;
   }

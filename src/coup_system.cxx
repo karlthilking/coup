@@ -1,12 +1,13 @@
-#include <string>
-#include <cstdlib>
-#include <cassert>
-#include <filesystem>
-#include <vector>
+#include "../include/coup_system.hxx"
+
 #include <algorithm>
+#include <cassert>
+#include <cstdlib>
+#include <filesystem>
+#include <string>
+#include <vector>
 
 #include "../include/coup_filesystem.hxx"
-#include "../include/coup_system.hxx"
 
 namespace fs = std::filesystem;
 namespace coup {
@@ -39,7 +40,8 @@ std::string make_link_command(const std::vector<fs::path>& obj_files) {
   return link_command;
 }
 
-std::string make_compile_and_link_command(const std::vector<fs::path>& src_files) {
+std::string make_compile_and_link_command(
+    const std::vector<fs::path>& src_files) {
   assert(!src_files.empty());
   std::string compile_link_command = "g++ -o prog ";
 
@@ -52,18 +54,21 @@ std::string make_compile_and_link_command(const std::vector<fs::path>& src_files
 // composes a run command for a given executable
 std::string make_run_command(const fs::path& exec_file) {
   assert(fs::exists(exec_file));
-  
+
   return exec_file.string();
 }
 
 // composes a -MMD command for a given source file
-std::string make_mm_command(const fs::path& src_file, const fs::path& dep_file) {
-  std::string mm_command = "g++ -MM " + src_file.string() + " > " + dep_file.string();
+std::string make_mm_command(const fs::path& src_file,
+                            const fs::path& dep_file) {
+  std::string mm_command =
+      "g++ -MM " + src_file.string() + " > " + dep_file.string();
   return mm_command;
 }
 
 // composes a system command with a command and file (e.g. cat main.cpp)
-std::string make_system_command(const std::string& command, const fs::path& file) {
+std::string make_system_command(const std::string& command,
+                                const fs::path& file) {
   return command + " " + file.string();
 }
 
@@ -80,7 +85,7 @@ bool compile(const std::vector<fs::path>& src_files) {
   assert(!src_files.empty());
   bool success = true;
 
-  for(const fs::path& src : src_files) {
+  for (const fs::path& src : src_files) {
     assert(fs::exists(src));
     if (!compile(src)) {
       success = false;
@@ -144,7 +149,7 @@ bool make_directory(const fs::path& dir) {
 
 // obtain command to create dependency file for a given source file
 // parse dependecy file to obtain all individual dependencies
-// return a vector of filenames representing dependencies 
+// return a vector of filenames representing dependencies
 std::vector<std::string> get_dependencies(const fs::path& src_file) {
   const fs::path& dep_file = make_dep_file(src_file);
   std::string mm_command = make_mm_command(src_file, dep_file);
@@ -156,4 +161,4 @@ std::vector<std::string> get_dependencies(const fs::path& src_file) {
   return dependencies;
 }
 
-} // namespace coup
+}  // namespace coup

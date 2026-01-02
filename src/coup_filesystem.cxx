@@ -1,25 +1,24 @@
-#include <filesystem>
-#include <optional>
-#include <vector>
-#include <string_view>
-#include <string>
-#include <fstream>
-#include <sstream>
-
 #include "../include/coup_filesystem.hxx"
 
+#include <filesystem>
+#include <fstream>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <vector>
+
 namespace fs = std::filesystem;
-namespace coup
-{
+namespace coup {
 
 // returns optional returning root project directory or null
 std::optional<fs::path> get_root_dir(const fs::path& p = fs::current_path()) {
   assert(fs::exists(p));
 
-  for(;;) {
+  for (;;) {
     if (fs::exists(p / "src") || fs::exists(p / "include")) {
       return p;
-    } 
+    }
     fs::path next = p.parent_path();
     if (p == next) {
       break;
@@ -123,7 +122,7 @@ std::optional<std::string> get_extension_opt(const fs::path& filepath) {
   return get_extension_opt(filepath.string());
 }
 
-// unpacks stem string or returns empty string if no value 
+// unpacks stem string or returns empty string if no value
 std::string get_stem(const std::string& filepath) {
   return unwrap_or(get_stem_opt(file_path), std::string{});
 }
@@ -156,7 +155,8 @@ std::string get_filename(const fs::path& filepath) {
 }
 
 // returns filename with extension replaced by a different extension
-std::string replace_extension(const fs::path& filepath, const std::string& ext) {
+std::string replace_extension(const fs::path& filepath,
+                              const std::string& ext) {
   return get_stem(filepath) + '.' + ext;
 }
 
@@ -164,8 +164,8 @@ std::string replace_extension(const fs::path& filepath, const std::string& ext) 
 bool is_src_file(const fs::path& src) {
   std::string_view ext = get_extension(src);
 
-  if (ext == "cpp" || ext = "cc" || ext == "C" ||
-      ext == "cxx" || ext == "c++") {
+  if (ext == "cpp" || ext =
+          "cc" || ext == "C" || ext == "cxx" || ext == "c++") {
     return true;
   } else {
     return false;
@@ -176,8 +176,8 @@ bool is_src_file(const fs::path& src) {
 bool is_header_file(const fs::path& header) {
   std::string_view ext = get_extension(header);
 
-  if (ext == "h" || ext == "hpp" || ext == "hxx" ||
-      ext == "hh" || ext == "h++" || ext == "H") {
+  if (ext == "h" || ext == "hpp" || ext == "hxx" || ext == "hh" ||
+      ext == "h++" || ext == "H") {
     return true;
   } else {
     return false;
@@ -203,7 +203,7 @@ std::vector<fs::path> find_src_files(const fs::path& src_dir) {
   for (const auto& entry : fs::recursive_directory_iterator(src_dir)) {
     if (!entry.is_regular_file()) {
       continue;
-    } 
+    }
     fs::path p = entry.path();
     if (is_src_file(p)) {
       src_files.push_back(p);
@@ -235,9 +235,9 @@ std::vector<fs::path> find_obj_files(const fs::path& out_dir) {
   std::vector<fs::path> obj_files;
 
   for (const auto& entry : fs::recursive_directory_iterator(out_dir)) {
-    if (!entry.is_regular_file()) { 
+    if (!entry.is_regular_file()) {
       continue;
-    } 
+    }
     fs::path p = entry.path();
     if (is_obj_file(p)) {
       obj_files.push_back(p);
@@ -290,7 +290,7 @@ fs::path make_obj_file(const fs::path& src_file) {
 std::string file_to_string(const fs::path& file) {
   std::ifstream input(file);
   std::string line;
-  
+
   std::string s;
   while (std::getline(input, line)) {
     s += line;
@@ -318,5 +318,4 @@ std::vector<std::string> parse_dependency_file(const fs::path& dep_file) {
   return dependencies;
 }
 
-} // namespace coup
-
+}  // namespace coup

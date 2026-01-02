@@ -2,17 +2,16 @@
 
 #include <filesystem>
 #include <optional>
-#include <vector>
-#include <string_view>
-#include <string>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <type_traits>
+#include <vector>
 
 namespace fs = std::filesystem;
-namespace coup
-{
+namespace coup {
 // return value or throw runtime error
-template<typename T>
+template <typename T>
 inline T unwrap_or_throw(std::optional<T> opt) {
   if (opt.has_value()) {
     return opt.value();
@@ -22,13 +21,14 @@ inline T unwrap_or_throw(std::optional<T> opt) {
 }
 
 // return optional value or specified fallback value
-template<typename T>
+template <typename T>
 inline T unwrap_or(std::optional<T>, T fallback) {
   return opt.value_or(fallback);
 }
 
 // directory discovery
-inline std::optional<fs::path> get_root_dir_opt(const fs::path& p = fs::current_path());
+inline std::optional<fs::path> get_root_dir_opt(
+    const fs::path& p = fs::current_path());
 inline std::optional<fs::path> get_src_dir_opt(const fs::path& root);
 inline std::optional<fs::path> get_include_dir_opt(const fs::path& root);
 inline std::optional<fs::path> get_out_dir_opt(const fs::path& root);
@@ -46,7 +46,7 @@ inline std::string get_stem(const fs::path& filepath);
 inline std::string get_extension(const fs::path& filepath);
 inline std::string get_filename(const fs::path& filepath);
 inline std::string replace_extension(const fs::path& filepath,
-                                     const std::string& ext); 
+                                     const std::string& ext);
 
 // file type checking
 inline bool is_src_file(const fs::path& src);
@@ -65,4 +65,4 @@ inline fs::path make_obj_file(const fs::path& src_file);
 // file parsing
 inline std::vector<std::string> parse_dependency_file(const fs::path& dep_file);
 
-} // namespace coup
+}  // namespace coup
