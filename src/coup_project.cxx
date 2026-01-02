@@ -4,9 +4,11 @@
 #include <stdexcept>
 #include <thread>
 #include <unordered_map>
+#include <algorithm>
 #include "../include/coup_project.hxx"
 #include "../include/coup_file.hxx"
 #include "../include/coup_filesystem.hxx"
+#include "../include/coup_system.hxx"
 
 namespace fs = std::filesystem;
 namespace coup {
@@ -23,8 +25,7 @@ coup_project::coup_project(std::vector<coup_file>&& files) noexcept
   * Returns a coup_project instance to the caller with properly initialized
   * coup_file instances
  */
-coup_project coup_project::make_project() 
-{
+coup_project coup_project::make_project() {
   // throws if no root is found
   fs::path root_dir = get_root_dir();
 
@@ -67,19 +68,37 @@ coup_project coup_project::make_project()
 }
 
 // Returns a vector of all project source files
-std::vector<fs::path> get_project_src_files() const noexcept
-{
-  std::vector<fs::path> src_files();
+std::vector<fs::path> get_project_src_files() const noexcept {
+  std::vector<fs::path> src_files;
   src_files.reserve(coup_files.size());
 
-  std::ranges::for_each(coup_files, [this](const coup_file& cf)
-  {
-    if (cf.has_src())
-    {
+  std::ranges::for_each(coup_files, [this](const coup_file& cf) {
+    if (cf.has_src()) {
       src_files.push_back(cf.get_src());
     }
-  }
+  });
   return src_files;
+}
+
+/*  Set/update dependency information for each coup file
+ *  
+ *  For every coup_file that:
+ *    - Has no generated dependency file or
+ *    - Has an outdated dependency file
+ *  - Retrieve up to date dependency info
+ *  - Set its dependency file
+ *  - Store dependencies in each coup_file class
+ */
+void set_dependencies() noexcept {
+  std::ranges::for_each(coup_files, [this](const coup_file& cf) {
+    if (cf.requires_dep_update()) {
+      auto deps = get_dependencies(cf.get_src());
+      cf.set_dep(make_dep_file(cf.get_src()));
+      for (const auto& dep : deps) {
+        cf.add_dependency(&coup_file_map[dep]);
+      }
+    }
+  }
 }
 } // namespace coup
 

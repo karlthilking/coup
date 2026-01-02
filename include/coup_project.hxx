@@ -18,8 +18,12 @@ private:
 public:
   // static creational function
   static coup_project make_project();
+
   // returns const reference to vector of project source files
   std::vector<fs::path> get_project_src_files() const noexcept;
+
+  // set dependencies of each coup_file
+  void set_dependencies() noexcept;
 };
 
 } // namespace coup
