@@ -19,7 +19,7 @@ private:
   bool obj_exists;
   bool dep_exists;
 
-  std::vector<std::shared_ptr<coup_file>> dependencies;
+  std::vector<coup_file*> dependencies;
   
 public:
   // constructors
@@ -40,8 +40,7 @@ public:
   const std::vector<std::shared_ptr<coup_file>> get_dependencies() const noexcept;
   
   // add dependencies to a coup_file object
-  void add_dependency(std::shared_ptr<coup_file> dep) noexcept;
-  void add_dependencies(std::vector<std::shared_ptr<coup_file>> deps) noexcept;
+  void add_dependency(coup_file* dep) noexcept;
   
   // returns true if a coup_file's source file requires recompilation, false otherwise
   bool requires_recompile() const noexcept;
