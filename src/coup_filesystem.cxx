@@ -89,9 +89,8 @@ fs::path get_out_dir(const fs::path& root) {
   return unwrap_or(get_out_dir_opt(root), fs::path{});
 }
 
-// returns file stem if there is one, otherwise empty optional
-std::optional<std::string> get_stem_opt(const fs::path& filepath) {
-  std::string s = filepath.string();
+// returns file stem from a filepath string, optionally empty
+std::optional<std::string> get_stem_opt(const std::string& filepath) {
   std::size_t dot_pos = s.rfind('.');
 
   if (s.empty() || dot_pos == 0) {
@@ -103,9 +102,13 @@ std::optional<std::string> get_stem_opt(const fs::path& filepath) {
   }
 }
 
-// returns file extension if there is one, otherwise empty optional
-std::optional<std::string> get_extension_opt(const fs::path& filepath) {
-  std::string s = filepath.string();
+// call filepath.string() and delegate
+std::optional<std::string> get_stem_opt(const fs::path& filepath) {
+  return get_stem_opt(filepath.string());
+}
+
+// returns file extension from filepath string or empty if no extension present
+std::optional<std::string> get_extension_opt(const std::string& filepath) {
   std::size_t dot_pos = s.rfind('.');
 
   if (s.empty() || dot_pos == std::string::npos) {
@@ -115,26 +118,41 @@ std::optional<std::string> get_extension_opt(const fs::path& filepath) {
   }
 }
 
-// wraps get_stem_opt to unpack optional or return empty string
+// call filepath.string() and delegate work
+std::optional<std::string> get_extension_opt(const fs::path& filepath) {
+  return get_extension_opt(filepath.string());
+}
+
+// unpacks stem string or returns empty string if no value 
+std::string get_stem(const std::string& filepath) {
+  return unwrap_or(get_stem_opt(file_path), std::string{});
+}
 std::string get_stem(const fs::path& filepath) {
   return unwrap_or(get_stem_opt(filepath), std::string{});
 }
 
-// wraps get_extension_opt to unpack optional or return empty string
+// unpacks extension string or returns empty string if no value
+std::string get_extension(const std::string& filepath) {
+  return unwrap_or(get_extension_opt(filepath), std::string{});
+}
 std::string get_extension(const fs::path& filepath) {
   return unwrap_or(get_extension_opt(filepath), std::string{});
 }
 
-// returns filename independent of path
-std::string get_filename(const fs::path& filepath) {
-  std::string s = filepath.string();
+// extracts name of file from a file path
+std::string get_filename(const std::string& filepath) {
   std::size_t slash_pos = s.rfind('/');
 
-  if (s.empty() || slash_pos = std::string::npos) {
+  if (s.empty() || slash_pos == std::string::npos) {
     return s;
   } else {
     return s.substr(slash_pos + 1);
   }
+}
+
+// call filepath.string() and delegate
+std::string get_filename(const fs::path& filepath) {
+  return get_filename(filepath.string());
 }
 
 // returns filename with extension replaced by a different extension
@@ -249,7 +267,7 @@ std::vector<fs::path> get_header_files(const fs::path& root) {
 }
 
 // handles obtaining out directory and extracting object files
-std::vector<fs::path> get_obj_fiels(const fs::path& root) {
+std::vector<fs::path> get_obj_files(const fs::path& root) {
   fs::path out_dir = get_out_dir(root);
   if (out_dir.empty() || !fs::exists(out_dir)) {
     return {};
