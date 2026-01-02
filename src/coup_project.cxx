@@ -1,108 +1,85 @@
-#include "../include/coup_project.hxx"
-
-#include <array>
-#include <cassert>     // assert
-#include <filesystem>  // path
-#include <optional>    // file_tracker functions return optionals
-#include <stdexcept>   // runtime_error
+#include <filesystem>
+#include <vector>
+#include <utility>
+#include <stdexcept>
 #include <thread>
 #include <unordered_map>
-#include <vector>
-
-#include "../include/coup_file.hxx"     // coup_file
-#include "../include/file_tracker.hxx"  // get_root, get_src_dir, get_include_dir,
-    // get_src_files, get_header_files, get_obj_files
+#include "../include/coup_project.hxx"
+#include "../include/coup_file.hxx"
+#include "../include/coup_filesystem.hxx"
 
 namespace fs = std::filesystem;
 namespace coup {
-// PRIVATE CONSTRUCTORS
-coup_project::coup_project(const std::vector<coup_file>& coup_files)
-    : coup_files(coup_files) {}
 
-coup_project::coup_project(std::vector<coup_file>&& coup_files) noexcept
-    : coup_files(std::move(coup_files)) {}
+coup_project::coup_project(const std::vector<coup_file>& files)
+  : coup_files(files)
+{}
 
-// COUP PROJECT STATIC FACTORY
-coup_project coup_project::create_project() {
-  std::optional<fs::path> r_opt = coup::get_root();
-  if (!r_opt.has_value()) {
-    throw std::runtime_error("[ERROR] No project directory was identified\n");
-  }
-  fs::path root = r_opt.value();
+coup_project::coup_project(std::vector<coup_file>&& files) noexcept
+  : coup_files(std::move(files))
+{}
 
-  std::vector<fs::path> src_files;
-  std::vector<fs::path> header_files;
-  std::vector<fs::path> obj_files;
+ /* Obtains all source, header, and object files, associated by filestem
+  * Returns a coup_project instance to the caller with properly initialized
+  * coup_file instances
+ */
+coup_project coup_project::make_project() 
+{
+  // throws if no root is found
+  fs::path root_dir = get_root_dir();
 
-  // source file finder thread
-  std::thread src_finder([&] {
-    std::optional<fs::path> s_opt = coup::get_src_dir(root);
-    if (!s_opt.has_value()) {
-      return;
+  // map of filename stem to associated paths (source, header, object)
+  std::unordered_map<std::string, std::array<fs::path, 3>> file_groups;
+  
+  std::thread src_handler([this] {
+    auto src_files = get_src_files(root_dir);
+    for (const fs::path& src : src_files) {
+      auto src_stem = get_stem(get_filename(src));
+      file_groups[src_stem][0] = src;
     }
-    src_files = coup::get_src_files(s_opt.value());
   });
 
-  // header file finder thread
-  std::thread header_finder([&] {
-    std::optional<fs::path> i_opt = coup::get_include_dir(root);
-    if (!i_opt.has_value()) {
-      return;
+  std::thread header_handler([this] {
+    auto header_files = get_header_files(root_dir);
+    for (const fs::path& header : header_files) {
+      auto header_stem = get_stem(get_filename(header));
+      file_groups[header_stem][1] = header;
     }
-    header_files = coup::get_header_files(i_opt.value());
   });
 
-  // object file finder thread
-  std::thread obj_finder([&] { obj_files = coup::get_obj_files(root); });
+  std::thread obj_handler([this] {
+    auto obj_files = get_obj_files(root_dir);
+    for (const fs::path& obj : obj_files) {
+      auto obj_stem = get_stem(get_filename(obj));
+      file_groups[obj_stem][2] = obj;
+    }
+  });
 
-  src_finder.join();
-  header_finder.join();
-  obj_finder.join();
-
-  // filename -> { source, header, object }
-  std::unordered_map<std::string_view, std::array<fs::path, 3>> coup_file_args;
+  src_handler.join();
+  header_handler.join();
+  obj_handler.join();
+  
   std::vector<coup_file> coup_files;
-
-  for (const fs::path& src : src_files) {
-    std::string src_name = src.string();
-    std::optional<std::string_view> fn_opt = coup::get_stem(src_name);
-    assert(fn_opt.has_value());
-
-    std::string_view filename = fn_opt.value();
-    coup_file_args[filename][0] = src;
+  for (const auto& [name, files] : file_groups) {
+    coup_files.emplace_back(files[0], files[1], files[2]);
   }
-
-  for (const fs::path& header : header_files) {
-    std::string header_name = header.string();
-    std::optional<std::string_view> fn_opt = coup::get_stem(header_name);
-    assert(fn_opt.has_value());
-
-    std::string_view filename = fn_opt.value();
-    coup_file_args[filename][1] = header;
-  }
-
-  for (const fs::path& obj : obj_files) {
-    std::string obj_name = obj.string();
-    std::optional<std::string_view> fn_opt = coup::get_stem(obj_name);
-    assert(fn_opt.has_value());
-
-    std::string_view filename = fn_opt.value();
-    coup_file_args[filename][2] = obj;
-  }
-
-  assert(!coup_file_args.empty());
-  for (auto& [fname, ftypes] : coup_file_args) {
-    coup_files.emplace_back(std::move(ftypes[0]), std::move(ftypes[1]),
-                            std::move(ftypes[2]));
-  }
-
-  assert(!coup_files.empty());
   return coup_project(std::move(coup_files));
 }
 
-// return all project files to function caller
-[[nodiscard]] const std::vector<coup_file>& coup_project::get_files()
-    const noexcept {
-  return coup_files;
+// Returns a vector of all project source files
+std::vector<fs::path> get_project_src_files() const noexcept
+{
+  std::vector<fs::path> src_files();
+  src_files.reserve(coup_files.size());
+
+  std::ranges::for_each(coup_files, [this](const coup_file& cf)
+  {
+    if (cf.has_src())
+    {
+      src_files.push_back(cf.get_src());
+    }
+  }
+  return src_files;
 }
-}  // namespace coup
+} // namespace coup
+
