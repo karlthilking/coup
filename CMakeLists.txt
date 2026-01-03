@@ -97,4 +97,6 @@ if(ENABLE_TESTING)
     coup_lib
     GTest::gtest_main
   )
+  include(GoogleTest)
+  gtest_discover_tests(coup_tests)
 endif()
