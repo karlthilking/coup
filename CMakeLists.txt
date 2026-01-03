@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(coup VERSION 0.1.0 LANGUAGES CXX)
+project(coup)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -94,8 +94,9 @@ if(ENABLE_TESTING)
     tests/filesystem_test.cxx
   )
   target_link_libraries(coup_tests PRIVATE
-    coup_lib
     GTest::gtest_main
+    GTest::gtest
+    coup_lib
   )
   include(GoogleTest)
   gtest_discover_tests(coup_tests)
