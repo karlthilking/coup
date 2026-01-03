@@ -48,7 +48,7 @@ std::optional<fs::path> get_include_dir_opt(const fs::path& root) {
   assert(fs::exists(root));
 
   if (fs::exists(root / "include")) {
-    return fs::path(root / "src");
+    return fs::path(root / "include");
   } else {
     return std::nullopt;
   }

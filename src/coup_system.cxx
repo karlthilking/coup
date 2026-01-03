@@ -1,13 +1,13 @@
-#include "../include/coup_system.hxx"
-
-#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
 #include <string>
 #include <vector>
-
+#include <algorithm>
+#include <ranges>
+#include "../include/coup_system.hxx"
 #include "../include/coup_filesystem.hxx"
+#include "../include/coup_project.hxx"
 
 namespace fs = std::filesystem;
 namespace coup {
@@ -33,10 +33,18 @@ std::string make_compile_command(const fs::path& src_file) {
 std::string make_link_command(const std::vector<fs::path>& obj_files) {
   assert(!obj_files.empty());
   std::string link_command = "g++ -o prog ";
-
-  std::ranges::for_each(obj_files, [&](const fs::path& obj) {
-    link_command += obj.string() + " ";
-  });
+  
+  #if(__cpp_lib_ranges >= 201911L)
+    std::ranges::for_each(obj_files, [&](const fs::path& obj) {
+      link_command += obj.string() + " ";
+    });
+  #else
+    std::for_each(begin(obj_files), end(obj_files),
+      [&](const fs::path& obj) {
+        link_command += obj.string() + " ";
+      }
+    );
+  #endif
   return link_command;
 }
 
@@ -45,9 +53,17 @@ std::string make_compile_and_link_command(
   assert(!src_files.empty());
   std::string compile_link_command = "g++ -o prog ";
 
-  std::ranges::for_each(src_files, [&](const fs::path& src) {
-    compile_link_command += src.string() + " ";
-  });
+  #if(__cpp_lib_ranges >= 201911L)
+    std::ranges::for_each(src_files, [&](const fs::path& src) {
+      compile_link_command += src.string() + " ";
+    });
+  #else
+    std::for_each(begin(src_files), end(src_files),
+      [&](const fs::path& src) {
+        compile_link_command += src.string() + " ";
+      }
+    );
+  #endif
   return compile_link_command;
 }
 
@@ -145,6 +161,43 @@ bool make_directory(const fs::path& dir) {
   std::string mkdir_command = make_system_command("mkdir", dir);
   bool result = execute_system_call(mkdir_command.c_str());
   return result && fs::exists(dir);
+}
+
+bool execute_build(const coup_project& proj) {
+  std::vector<fs::path> src_files = proj.get_project_src_files();
+  return compile_and_link(src_files);
+}
+
+bool execute_run(const coup_project& proj, const fs::path& exec_file) {
+  std::vector<fs::path> src_files = proj.get_project_src_files();
+  if (!compile_and_link(src_files)) {
+    return false;
+  } else if(!run(exec_file)) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+/* Executes a command specified as a string
+ * Delegates execution to the correct function argument to string argument
+ * Returns true if command executes successfully, false if execution is unsuccessful
+ * Throws an invalid_argument exception if an unrecognized command is provided
+*/
+bool execute_command(const std::string& command) {
+  coup_project proj = coup_project::make_project();
+  
+  if (command == "build") {
+    return execute_build(proj);
+  } else if (command == "run") {
+    fs::path root = get_root_dir();
+    return execute_run(proj, fs::path(root / "prog"));
+  } else if (command == "clean") {
+    // TODO (incomplete)
+    return true;
+  } else {
+    throw std::invalid_argument("Not a valid command");
+  }
 }
 
 // obtain command to create dependency file for a given source file

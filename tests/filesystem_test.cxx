@@ -15,13 +15,14 @@ protected:
 
   void SetUp() override {}
 
-  fs::path root_dir;
-  fs::path src_dir;
-  fs::path include_dir;
-  fs::path out_dir;
+  fs::path root_dir = get_root_dir();
+  fs::path src_dir = get_src_dir(root_dir);
+  fs::path include_dir = get_include_dir(root_dir);
+  fs::path out_dir = get_out_dir(root_dir);
 
   std::vector<fs::path> src_files;
   std::vector<fs::path> header_files;
+  std::vector<fs::path> obj_files;
 };
 
 TEST_F(test_filesystem, root_dir_test) {
@@ -83,5 +84,20 @@ TEST_F(test_filesystem, out_dir_test) {
   out_dir = get_out_dir(root_dir);
 
   EXPECT_TRUE(fs::exists(out_dir));
+  EXPECT_FALSE(out_dir.empty());
+
+  std::cout << "Build Directory: " << out_dir.string() << "\n";
+}
+
+TEST_F(test_filesystem, obj_files_test) {
+  obj_files = get_obj_files(out_dir);
+
+  std::cout << "Object Files:\n";
+  for (const fs::path& obj : obj_files) {
+    EXPECT_TRUE(fs::exists(obj));
+    EXPECT_FALSE(obj.empty());
+
+    std::cout << obj.string() << "\n";
+  }
 }
 

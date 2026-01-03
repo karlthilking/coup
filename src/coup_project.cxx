@@ -1,6 +1,3 @@
-#include "../include/coup_project.hxx"
-
-#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <stdexcept>
@@ -8,7 +5,9 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-
+#include <algorithm>
+#include <ranges>
+#include "../include/coup_project.hxx"
 #include "../include/coup_file.hxx"
 #include "../include/coup_filesystem.hxx"
 
@@ -71,12 +70,22 @@ coup_project coup_project::make_project() {
 std::vector<fs::path> coup_project::get_project_src_files() const noexcept {
   std::vector<fs::path> src_files;
   src_files.reserve(coup_files.size());
-
-  std::ranges::for_each(coup_files, [&](const coup_file& cf) {
-    if (cf.has_src()) {
-      src_files.push_back(cf.get_src());
-    }
-  });
+  
+  #if(__cpp_lib_ranges >= 201911L)
+    std::ranges::for_each(coup_files, [&](const coup_file& cf) {
+      if (cf.has_src()) {
+        src_files.push_back(cf.get_src());
+      }
+    });
+  #else
+    std::for_each(begin(coup_files), end(coup_files),
+      [&](const coup_file& cf) {
+        if (cf.has_src()) {
+          src_files.push_back(cf.get_src());
+        }
+      }
+    );
+  #endif
   return src_files;
 }
 
@@ -90,6 +99,7 @@ std::vector<fs::path> coup_project::get_project_src_files() const noexcept {
  *  - Store dependencies in each coup_file class
  */
 void coup_project::set_dependencies() noexcept {
+  ;
   /*
   std::ranges::for_each(coup_files, [this](const coup_file& cf) {
     if (cf.requires_dep_update()) {
