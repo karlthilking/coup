@@ -53,32 +53,31 @@ if(ENABLE_CLANG_TIDY)
 endif()
 
 set(COUP_HEADERS
-	include/commands.hxx
-	include/file_tracker.hxx
-	include/utility.hxx
-	include/config.hxx
-	include/regex.hxx
-  include/dag.hxx
-  include/parser.hxx
+	include/coup_filesystem.hxx
+  include/coup_system.hxx
   include/coup_file.hxx
   include/coup_project.hxx
 )
 
 set(COUP_SOURCES
   src/main.cxx
-  src/dag.cxx
+  src/coup_filesystem.cxx
+  src/coup_system.cxx
   src/coup_file.cxx
   src/coup_project.cxx
 )
 
-add_executable(coup
-  ${COUP_SOURCES}
-  ${COUP_HEADERS}
+add_library(coup_lib STATIC ${COUP_SOURCES} ${COUP_HEADERS})
+
+target_include_directories(coup_lib PUBLIC 
+	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_include_directories(coup PRIVATE
-	${CMAKE_CURRENT_SOURCE_DIR}/source
+add_executable(coup
+  src/main.cxx
 )
+
+target_link_libraries(coup PRIVATE coup_lib)
 
 if(ENABLE_TESTING)
   add_compile_definitions(ENABLE_TESTING)
@@ -92,15 +91,10 @@ if(ENABLE_TESTING)
 
   FetchContent_MakeAvailable(googletest)
   add_executable(coup_tests
-    tests/test_commands.cxx
-    tests/test_file_tracker.cxx
-    tests/test_parser.cxx
-    tests/test_regex.cxx
-    tests/test_utility.cxx
+    tests/filesystem_test.cxx
   )
-  target_link_libraries(coup_tests PRIVATE GTest::gtest_main)
-  target_include_directories(coup_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/source)
-
-  include(GoogleTest)
-  gtest_discover_tests(coup_tests)
+  target_link_libraries(coup_tests PRIVATE
+    coup_lib
+    GTest::gtest_main
+  )
 endif()
