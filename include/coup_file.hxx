@@ -22,8 +22,8 @@ class coup_file {
 
  public:
   // constructors
-  coup_file(const fs::path& s, const fs::path& h, const fs::path& o,
-            const fs::path& d);
+  coup_file(const fs::path& s = fs::path{}, const fs::path& h = fs::path{},
+            const fs::path& o = fs::path{}, const fs::path& d = fs::path{});
   coup_file(fs::path&& s, fs::path&& h, fs::path&& o, fs::path&& d) noexcept;
 
   // functions to check if a coup_file contains a specific file type
@@ -39,10 +39,10 @@ class coup_file {
   const fs::path& get_dep() const noexcept;
 
   // setters
-  void set_src() noexcept;
-  void set_header() noexcept;
-  void set_obj() noexcept;
-  void set_dep() noexcept;
+  void set_src(const fs::path& new_src) noexcept;
+  void set_header(const fs::path& new_header) noexcept;
+  void set_obj(const fs::path& new_obj) noexcept;
+  void set_dep(const fs::path& new_dep) noexcept;
 
   // add dependencies to a coup_file object
   void add_dependency(coup_file* dep) noexcept;
@@ -51,7 +51,7 @@ class coup_file {
   bool requires_recompile() const noexcept;
 
   // returns true if dependency file needs to be udpated
-  bool requires_dep_update() const noexpcet;
+  bool requires_dep_update() const noexcept;
 };
 
 }  // namespace coup

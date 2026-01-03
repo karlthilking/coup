@@ -6,7 +6,7 @@
 namespace fs = std::filesystem;
 namespace coup {
 // copies std::filesystem::path's to coup_file member variables
-coup_file::coup_file(const fs::path& s, const fs::path& h const fs::path& o,
+coup_file::coup_file(const fs::path& s, const fs::path& h, const fs::path& o,
                      const fs::path& d)
     : src_file(s),
       header_file(h),
@@ -18,7 +18,8 @@ coup_file::coup_file(const fs::path& s, const fs::path& h const fs::path& o,
       dep_exists(fs::exists(dep_file)) {}
 
 // move std::filesystem::path's to coup_file member variables
-coup_file(fs::path&& s, fs::path&& h, fs::path&& o, fs::path&& d) noexcept
+coup_file::coup_file(fs::path&& s, fs::path&& h, fs::path&& o,
+                     fs::path&& d) noexcept
     : src_file(std::move(s)),
       header_file(std::move(h)),
       obj_file(std::move(o)),
@@ -73,7 +74,7 @@ void coup_file::add_dependency(coup_file* dep) noexcept {
  *  - header or source has been updated more recently than object file
  *  - header or source of any dependency has been updated after the object file
  */
-bool requires_recompile() const noexcept {
+bool coup_file::requires_recompile() const noexcept {
   if (!src_exists) {
     return false;
   } else if (!obj_exists) {
@@ -100,7 +101,7 @@ bool requires_recompile() const noexcept {
 }
 
 // Returns true if dependency file needs to be set or updated
-bool requires_dep_update() const noexcept {
+bool coup_file::requires_dep_update() const noexcept {
   if (!src_exists) {
     return false;
   } else if (!dep_exists) {

@@ -1,5 +1,6 @@
 #include "../include/coup_filesystem.hxx"
 
+#include <cassert>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -12,18 +13,19 @@ namespace fs = std::filesystem;
 namespace coup {
 
 // returns optional returning root project directory or null
-std::optional<fs::path> get_root_dir(const fs::path& p = fs::current_path()) {
+std::optional<fs::path> get_root_dir_opt(const fs::path& p) {
   assert(fs::exists(p));
 
+  fs::path current = p;
   for (;;) {
-    if (fs::exists(p / "src") || fs::exists(p / "include")) {
-      return p;
+    if (fs::exists(current / "src") || fs::exists(current / "include")) {
+      return current;
     }
     fs::path next = p.parent_path();
-    if (p == next) {
+    if (current == next) {
       break;
     } else {
-      p = next;
+      current = next;
     }
   }
 
@@ -58,13 +60,15 @@ std::optional<fs::path> get_out_dir_opt(const fs::path& root) {
 
   if (fs::exists(root / "out")) {
     return fs::path(root / "out");
+  } else if (fs::exists(root / "build")) {
+    return fs::path(root / "build");
   } else {
     return std::nullopt;
   }
 }
 
 // returns root directory if found, otherwise throw a runtime_error
-fs::path get_root_dir(const fs::path& p = fs::current_path()) {
+fs::path get_root_dir(const fs::path& p) {
   try {
     fs::path root = unwrap_or_throw(get_root_dir_opt(p));
     return root;
@@ -90,14 +94,14 @@ fs::path get_out_dir(const fs::path& root) {
 
 // returns file stem from a filepath string, optionally empty
 std::optional<std::string> get_stem_opt(const std::string& filepath) {
-  std::size_t dot_pos = s.rfind('.');
+  std::size_t dot_pos = filepath.rfind('.');
 
-  if (s.empty() || dot_pos == 0) {
+  if (filepath.empty() || dot_pos == 0) {
     return std::nullopt;
   } else if (dot_pos == std::string::npos) {
-    return s;
+    return filepath;
   } else {
-    return s.substr(0, dot_pos);
+    return filepath.substr(0, dot_pos);
   }
 }
 
@@ -108,12 +112,12 @@ std::optional<std::string> get_stem_opt(const fs::path& filepath) {
 
 // returns file extension from filepath string or empty if no extension present
 std::optional<std::string> get_extension_opt(const std::string& filepath) {
-  std::size_t dot_pos = s.rfind('.');
+  std::size_t dot_pos = filepath.rfind('.');
 
-  if (s.empty() || dot_pos == std::string::npos) {
+  if (filepath.empty() || dot_pos == std::string::npos) {
     return std::nullopt;
   } else {
-    return s.substr(dot_pos + 1);
+    return filepath.substr(dot_pos + 1);
   }
 }
 
@@ -124,7 +128,7 @@ std::optional<std::string> get_extension_opt(const fs::path& filepath) {
 
 // unpacks stem string or returns empty string if no value
 std::string get_stem(const std::string& filepath) {
-  return unwrap_or(get_stem_opt(file_path), std::string{});
+  return unwrap_or(get_stem_opt(filepath), std::string{});
 }
 std::string get_stem(const fs::path& filepath) {
   return unwrap_or(get_stem_opt(filepath), std::string{});
@@ -140,12 +144,12 @@ std::string get_extension(const fs::path& filepath) {
 
 // extracts name of file from a file path
 std::string get_filename(const std::string& filepath) {
-  std::size_t slash_pos = s.rfind('/');
+  std::size_t slash_pos = filepath.rfind('/');
 
-  if (s.empty() || slash_pos == std::string::npos) {
-    return s;
+  if (filepath.empty() || slash_pos == std::string::npos) {
+    return filepath;
   } else {
-    return s.substr(slash_pos + 1);
+    return filepath.substr(slash_pos + 1);
   }
 }
 
@@ -164,8 +168,8 @@ std::string replace_extension(const fs::path& filepath,
 bool is_src_file(const fs::path& src) {
   std::string_view ext = get_extension(src);
 
-  if (ext == "cpp" || ext =
-          "cc" || ext == "C" || ext == "cxx" || ext == "c++") {
+  if (ext == "cpp" || ext == "cc" || ext == "C" || ext == "cxx" ||
+      ext == "c++") {
     return true;
   } else {
     return false;
@@ -248,7 +252,7 @@ std::vector<fs::path> find_obj_files(const fs::path& out_dir) {
 
 // handles obtaining source directory and getting source files from directory
 std::vector<fs::path> get_src_files(const fs::path& root) {
-  fs::path src_dir = get_src_dir(root);
+  auto src_dir = get_src_dir(root);
   if (src_dir.empty() || !fs::exists(src_dir)) {
     return {};
   } else {
@@ -258,7 +262,7 @@ std::vector<fs::path> get_src_files(const fs::path& root) {
 
 // handles obtaining include directory and extracting header files
 std::vector<fs::path> get_header_files(const fs::path& root) {
-  fs::path include_dir = get_include_dir(root);
+  auto include_dir = get_include_dir(root);
   if (include_dir.empty() || !fs::exists(include_dir)) {
     return {};
   } else {
@@ -268,7 +272,7 @@ std::vector<fs::path> get_header_files(const fs::path& root) {
 
 // handles obtaining out directory and extracting object files
 std::vector<fs::path> get_obj_files(const fs::path& root) {
-  fs::path out_dir = get_out_dir(root);
+  auto out_dir = get_out_dir(root);
   if (out_dir.empty() || !fs::exists(out_dir)) {
     return {};
   } else {
@@ -278,12 +282,12 @@ std::vector<fs::path> get_obj_files(const fs::path& root) {
 
 // make a corresponding dependency file for a source file
 fs::path make_dep_file(const fs::path& src_file) {
-  return fs::path{replace_extension(src_file, "d")};
+  return fs::path{{replace_extension(src_file, "d")}};
 }
 
 // make a corresponding object file for a source file
 fs::path make_obj_file(const fs::path& src_file) {
-  return fs::path{replace_extension(src_file, "o")};
+  return fs::path{{replace_extension(src_file, "o")}};
 }
 
 // returns a string representation of file contents
@@ -317,5 +321,4 @@ std::vector<std::string> parse_dependency_file(const fs::path& dep_file) {
 
   return dependencies;
 }
-
 }  // namespace coup

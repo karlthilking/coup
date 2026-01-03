@@ -1,6 +1,7 @@
 #include "../include/coup_project.hxx"
 
 #include <algorithm>
+#include <array>
 #include <filesystem>
 #include <stdexcept>
 #include <thread>
@@ -10,7 +11,6 @@
 
 #include "../include/coup_file.hxx"
 #include "../include/coup_filesystem.hxx"
-#include "../include/coup_system.hxx"
 
 namespace fs = std::filesystem;
 namespace coup {
@@ -32,7 +32,7 @@ coup_project coup_project::make_project() {
   // map of filename stem to associated paths (source, header, object)
   std::unordered_map<std::string, std::array<fs::path, 3>> file_groups;
 
-  std::thread src_handler([this] {
+  std::thread src_handler([&] {
     auto src_files = get_src_files(root_dir);
     for (const fs::path& src : src_files) {
       auto src_stem = get_stem(get_filename(src));
@@ -40,7 +40,7 @@ coup_project coup_project::make_project() {
     }
   });
 
-  std::thread header_handler([this] {
+  std::thread header_handler([&] {
     auto header_files = get_header_files(root_dir);
     for (const fs::path& header : header_files) {
       auto header_stem = get_stem(get_filename(header));
@@ -48,7 +48,7 @@ coup_project coup_project::make_project() {
     }
   });
 
-  std::thread obj_handler([this] {
+  std::thread obj_handler([&] {
     auto obj_files = get_obj_files(root_dir);
     for (const fs::path& obj : obj_files) {
       auto obj_stem = get_stem(get_filename(obj));
@@ -68,11 +68,11 @@ coup_project coup_project::make_project() {
 }
 
 // Returns a vector of all project source files
-std::vector<fs::path> get_project_src_files() const noexcept {
+std::vector<fs::path> coup_project::get_project_src_files() const noexcept {
   std::vector<fs::path> src_files;
   src_files.reserve(coup_files.size());
 
-  std::ranges::for_each(coup_files, [this](const coup_file& cf) {
+  std::ranges::for_each(coup_files, [&](const coup_file& cf) {
     if (cf.has_src()) {
       src_files.push_back(cf.get_src());
     }
@@ -89,7 +89,8 @@ std::vector<fs::path> get_project_src_files() const noexcept {
  *  - Set its dependency file
  *  - Store dependencies in each coup_file class
  */
-void set_dependencies() noexcept {
+void coup_project::set_dependencies() noexcept {
+  /*
   std::ranges::for_each(coup_files, [this](const coup_file& cf) {
     if (cf.requires_dep_update()) {
       auto deps = get_dependencies(cf.get_src());
@@ -98,6 +99,7 @@ void set_dependencies() noexcept {
         cf.add_dependency(&coup_file_map[dep]);
       }
     }
-  }
+  });
+  */
 }
 }  // namespace coup

@@ -31,7 +31,7 @@ std::string make_compile_command(const fs::path& src_file) {
 
 // composes a link command for a given list of object files
 std::string make_link_command(const std::vector<fs::path>& obj_files) {
-  assert(!obj_file.empty());
+  assert(!obj_files.empty());
   std::string link_command = "g++ -o prog ";
 
   std::ranges::for_each(obj_files, [&](const fs::path& obj) {
@@ -115,7 +115,7 @@ bool compile_and_link(const std::vector<fs::path>& src_files) {
 // return true if successful, false otherwise
 bool run(const fs::path& exec_file) {
   std::string run_command = make_run_command(exec_file);
-  bool result = execute_system_call(run_command);
+  bool result = execute_system_call(run_command.c_str());
   return result;
 }
 
@@ -125,7 +125,7 @@ bool remove_file(const fs::path& file) {
   assert(fs::exists(file));
 
   std::string rm_command = make_system_command("rm", file);
-  bool result = execute_system_call(rm_command);
+  bool result = execute_system_call(rm_command.c_str());
   return result && !fs::exists(file);
 }
 
@@ -135,7 +135,7 @@ bool remove_directory(const fs::path& dir) {
   assert(fs::exists(dir));
 
   std::string rmdir_command = make_system_command("rmdir", dir);
-  bool result = execute_system_call(rmdir_command);
+  bool result = execute_system_call(rmdir_command.c_str());
   return result && !fs::exists(dir);
 }
 
@@ -143,7 +143,7 @@ bool remove_directory(const fs::path& dir) {
 // returns true if command executes and directory is created, false otherwise
 bool make_directory(const fs::path& dir) {
   std::string mkdir_command = make_system_command("mkdir", dir);
-  bool result = execute_system_call(mkdir_command);
+  bool result = execute_system_call(mkdir_command.c_str());
   return result && fs::exists(dir);
 }
 
@@ -151,10 +151,10 @@ bool make_directory(const fs::path& dir) {
 // parse dependecy file to obtain all individual dependencies
 // return a vector of filenames representing dependencies
 std::vector<std::string> get_dependencies(const fs::path& src_file) {
-  const fs::path& dep_file = make_dep_file(src_file);
+  auto dep_file = make_dep_file(src_file);
   std::string mm_command = make_mm_command(src_file, dep_file);
 
-  bool command_result = execute_system_call(mm_command);
+  bool command_result = execute_system_call(mm_command.c_str());
   assert(command_result == true);
 
   std::vector<std::string> dependencies = parse_dependency_file(dep_file);
