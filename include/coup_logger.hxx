@@ -16,7 +16,7 @@ private:
 public:
   coup_logger(int total, bool verbose);
 
-  void print_usage() const noexcept;
+  static void print_usage() const noexcept;
 
   void print_compile(std::string_view src_name,
                      std::string_view compile_command = "") noexcept;

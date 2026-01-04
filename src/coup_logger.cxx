@@ -12,7 +12,7 @@ namespace coup {
 
 coup_logger(int total, bool verbose)
   : log_count(0),
-    log_total(total),
+    log_total(total)
     verbose_output(verbose)
 {}
 
@@ -21,10 +21,15 @@ coup_logger(int total, bool verbose)
  *    - user provides an invalid argument
  */
 void coup_logger::print_usage() const noexcept {
-  std::cerr << "Usage: ./coup <command>\nCommands:\n"
+  std::cerr << "Usage: ./coup <command> <option>\nCommands:\n"
     << "  build: Compile and link source files into executable\n"
     << "  run: Complete build step and run executable\n"
     << "  clean: Remove build artifacts\n";
+    << "Options:\n  verbose: Enable verbose ouput during command execution\n";
+}
+
+void coup_logger::print_error(const std::string& error_msg) const noexcept {
+  std::cerr << "Error: " << error_msg << "\n";
 }
 
 /*  Print log message indicating a file compilation occuring
