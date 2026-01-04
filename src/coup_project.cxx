@@ -14,11 +14,21 @@
 namespace fs = std::filesystem;
 namespace coup {
 
-coup_project::coup_project(const std::vector<coup_file>& files)
-    : coup_files(files) {}
+coup_project::coup_project(const std::vector<coup_file>& coup_files_,
+                           const std::vector<fs::path>& src_files_,
+                           const std::vector<fs::path>& obj_files_)
+    : coup_files(coup_files_),
+      src_files(src_files_),
+      obj_files(obj_files_)
+{}
 
-coup_project::coup_project(std::vector<coup_file>&& files) noexcept
-    : coup_files(std::move(files)) {}
+coup_project::coup_project(std::vector<coup_file>&& coup_files_,
+                           std::vector<fs::path>&& src_files_,
+                           std::vector<fs::path>&& obj_files_) noexcept
+    : coup_files(std::move(coup_files_)),
+      src_files(std::move(src_files_)),
+      obj_files(std::move(obj_files_))
+{}
 
 /* Obtains all source, header, and object files, associated by filestem
  * Returns a coup_project instance to the caller with properly initialized
@@ -30,9 +40,12 @@ coup_project coup_project::make_project() {
 
   // map of filename stem to associated paths (source, header, object)
   std::unordered_map<std::string, std::array<fs::path, 3>> file_groups;
+  
+  std::vector<fs::path> src_files;
+  std::vector<fs::path> obj_files;
 
   std::thread src_handler([&] {
-    auto src_files = get_src_files(root_dir);
+    src_files = get_src_files(root_dir);
     for (const fs::path& src : src_files) {
       auto src_stem = get_stem(get_filename(src));
       file_groups[src_stem][0] = src;
@@ -48,7 +61,7 @@ coup_project coup_project::make_project() {
   });
 
   std::thread obj_handler([&] {
-    auto obj_files = get_obj_files(root_dir);
+    obj_files = get_obj_files(root_dir);
     for (const fs::path& obj : obj_files) {
       auto obj_stem = get_stem(get_filename(obj));
       file_groups[obj_stem][2] = obj;
@@ -63,30 +76,27 @@ coup_project coup_project::make_project() {
   for (const auto& [name, files] : file_groups) {
     coup_files.emplace_back(files[0], files[1], files[2]);
   }
-  return coup_project(std::move(coup_files));
+  return coup_project(std::move(coup_files)
+                      std::move(src_files),
+                      std::move(obj_files));
 }
 
-// Returns a vector of all project source files
+// return source files
 std::vector<fs::path> coup_project::get_project_src_files() const noexcept {
-  std::vector<fs::path> src_files;
-  src_files.reserve(coup_files.size());
-  
-  #if(__cpp_lib_ranges >= 201911L)
-    std::ranges::for_each(coup_files, [&](const coup_file& cf) {
-      if (cf.has_src()) {
-        src_files.push_back(cf.get_src());
-      }
-    });
-  #else
-    std::for_each(begin(coup_files), end(coup_files),
-      [&](const coup_file& cf) {
-        if (cf.has_src()) {
-          src_files.push_back(cf.get_src());
-        }
-      }
-    );
-  #endif
   return src_files;
+}
+
+// return obj files
+std::vector<fs::path> coup_project::get_project_obj_files() const noexcept {
+  return obj_files;
+}
+
+int coup_project::num_src_files() const noexcept {
+  return src_files.size();
+}
+
+int coup_project::num_obj_files() const noexcept {
+  return obj_files.size();
 }
 
 /*  Set/update dependency information for each coup file
