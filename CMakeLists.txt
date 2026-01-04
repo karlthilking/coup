@@ -57,6 +57,7 @@ set(COUP_HEADERS
   include/coup_system.hxx
   include/coup_file.hxx
   include/coup_project.hxx
+  include/coup_logger.hxx
 )
 
 set(COUP_SOURCES
@@ -65,6 +66,7 @@ set(COUP_SOURCES
   src/coup_system.cxx
   src/coup_file.cxx
   src/coup_project.cxx
+  src/coup_logger.cxx
 )
 
 add_library(coup_lib STATIC ${COUP_SOURCES} ${COUP_HEADERS})
