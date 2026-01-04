@@ -1,13 +1,15 @@
+#include "../include/coup_project.hxx"
+
+#include <algorithm>
 #include <array>
 #include <filesystem>
+#include <ranges>
 #include <stdexcept>
 #include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <algorithm>
-#include <ranges>
-#include "../include/coup_project.hxx"
+
 #include "../include/coup_file.hxx"
 #include "../include/coup_filesystem.hxx"
 
@@ -17,18 +19,14 @@ namespace coup {
 coup_project::coup_project(const std::vector<coup_file>& coup_files_,
                            const std::vector<fs::path>& src_files_,
                            const std::vector<fs::path>& obj_files_)
-    : coup_files(coup_files_),
-      src_files(src_files_),
-      obj_files(obj_files_)
-{}
+    : coup_files(coup_files_), src_files(src_files_), obj_files(obj_files_) {}
 
 coup_project::coup_project(std::vector<coup_file>&& coup_files_,
                            std::vector<fs::path>&& src_files_,
                            std::vector<fs::path>&& obj_files_) noexcept
     : coup_files(std::move(coup_files_)),
       src_files(std::move(src_files_)),
-      obj_files(std::move(obj_files_))
-{}
+      obj_files(std::move(obj_files_)) {}
 
 /* Obtains all source, header, and object files, associated by filestem
  * Returns a coup_project instance to the caller with properly initialized
@@ -40,7 +38,7 @@ coup_project coup_project::make_project() {
 
   // map of filename stem to associated paths (source, header, object)
   std::unordered_map<std::string, std::array<fs::path, 3>> file_groups;
-  
+
   std::vector<fs::path> src_files;
   std::vector<fs::path> obj_files;
 
@@ -76,8 +74,7 @@ coup_project coup_project::make_project() {
   for (const auto& [name, files] : file_groups) {
     coup_files.emplace_back(files[0], files[1], files[2]);
   }
-  return coup_project(std::move(coup_files)
-                      std::move(src_files),
+  return coup_project(std::move(coup_files) std::move(src_files),
                       std::move(obj_files));
 }
 
@@ -91,13 +88,9 @@ std::vector<fs::path> coup_project::get_project_obj_files() const noexcept {
   return obj_files;
 }
 
-int coup_project::num_src_files() const noexcept {
-  return src_files.size();
-}
+int coup_project::num_src_files() const noexcept { return src_files.size(); }
 
-int coup_project::num_obj_files() const noexcept {
-  return obj_files.size();
-}
+int coup_project::num_obj_files() const noexcept { return obj_files.size(); }
 
 /*  Set/update dependency information for each coup file
  *

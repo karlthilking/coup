@@ -1,6 +1,7 @@
+#include "../include/coup_file.hxx"
+
 #include <filesystem>
 #include <vector>
-#include "../include/coup_file.hxx"
 
 namespace fs = std::filesystem;
 namespace coup {

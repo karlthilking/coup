@@ -27,18 +27,18 @@ class coup_project {
  public:
   // Static function that returns a coup_project
   static coup_project make_project();
-  
+
   /*  Obtains source files if they have not been
    *  instantiated and returns project source files
    *  to caller
    *  Source files are found lazily, they are not set
    *  during construction of a coup_project
-   */ 
+   */
   std::vector<fs::path> get_project_src_files() const noexcept;
-  
+
   // Obtains all project object and executable files
   std::vector<fs::path> get_project_obj_files() const noexcept;
-  
+
   // return number of project source files
   int num_src_files() const noexcept;
 

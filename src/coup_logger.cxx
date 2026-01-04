@@ -1,9 +1,11 @@
-#include <stdexcept>
-#include <string_view>
+#include "../include/coup_logger.hxx"
+
+#include <cassert>
 #include <filesystem>
 #include <iostream>
-#include <cassert>
-#include "../include/coup_logger.hxx"
+#include <stdexcept>
+#include <string_view>
+
 #include "../include/coup_filesystem.hxx"
 #include "../include/coup_system.hxx"
 
@@ -11,10 +13,7 @@ namespace fs = std::filesystem;
 namespace coup {
 
 coup_logger(int total, bool verbose)
-  : log_count(0),
-    log_total(total)
-    verbose_output(verbose)
-{}
+    : log_count(0), log_total(total) verbose_output(verbose) {}
 
 /*  Print message explanation user to the user if:
  *    - user provides no arguments
@@ -22,14 +21,15 @@ coup_logger(int total, bool verbose)
  */
 void coup_logger::print_usage() const noexcept {
   std::cerr << "Usage: ./coup <command> <option>\nCommands:\n"
-    << "  build: Compile and link source files into executable\n"
-    << "  run: Complete build step and run executable\n"
-    << "  clean: Remove build artifacts\n";
-    << "Options:\n  verbose: Enable verbose ouput during command execution\n";
+            << "  build: Compile and link source files into executable\n"
+            << "  run: Complete build step and run executable\n"
+            << "  clean: Remove build artifacts\n";
+  << "Options:\n  verbose: Enable verbose ouput during command execution\n";
 }
 
-void coup_logger::print_error(const std::string& error_msg) const noexcept {
-  std::cerr << "Error: " << error_msg << "\n";
+// Error logging for generally occuring errors
+void coup_logger::print_error(const std::string& error_message) const noexcept {
+  std::cerr << "Error: " << error_message << "\n";
 }
 
 /*  Print log message indicating a file compilation occuring
@@ -39,8 +39,8 @@ void coup_logger::print_error(const std::string& error_msg) const noexcept {
 void coup_logger::print_compile(std::string_view src_name,
                                 std::string_view compile_command) noexcept {
   if (verbose_output) {
-    std::cout << "[" << log_count++ << "/" << log_total 
-      << "] Compiling " << src_name << "\n";
+    std::cout << "[" << log_count++ << "/" << log_total << "] Compiling "
+              << src_name << "\n";
     std::cout << "  $ " << compile_command << "\n";
   } else {
     std::cout << "Compiling " << src_name << "\n";
@@ -53,8 +53,7 @@ void coup_logger::print_compile(std::string_view src_name,
 void coup_logger::print_link(std::string_view exec_name,
                              std::string_view link_command) const noexcept {
   if (verbose_output) {
-    std::cout << "Linking " << exec_name << "\n  $ "
-      << link_command << "\n";
+    std::cout << "Linking " << exec_name << "\n  $ " << link_command << "\n";
   } else {
     std::cout << "Linking " << exec_name << "\n";
   }
@@ -68,7 +67,7 @@ void coup_logger::print_remove(std::string_view file_name,
                                std::string_view rm_command) noexcept {
   if (verbose_output) {
     std::cout << "[" << log_count++ << "/" << total_count << "] Removing "
-      << file_name << "\n";
+              << file_name << "\n";
     std::cout << "  $ " << rm_command << "\n";
   } else {
     std::cout << "Removing " << file_name << "\n";
@@ -94,14 +93,14 @@ void coup_logger::print_result_success(std::string_view command,
 
 /*  Determine which command failed and delegate logging to matching function
  */
-void coup_logger::print_result_failure(std::string_view command,
-                                       const std::exception& e) const noexcept {
+void coup_logger::print_result_failure(
+    std::string_view command, const std::string& error_message) const noexcept {
   if (command == "build") {
-    print_build_failure(e);
+    print_build_failure(error_message);
   } else if (command == "run") {
-    print_run_failure(e);
+    print_run_failure(error_message);
   } else if (command == "clean") {
-    print_clean_failure(e);
+    print_clean_failure(error_message);
   } else {
     // should never reach this branch
     assert(false && "print_result_failure received invalid command");
@@ -114,8 +113,9 @@ void coup_logger::print_build_success(double runtime) const noexcept {
 }
 
 // log build failure
-void coup_logger::print_build_failure(const std::exception& e) const noexcept {
-  std::cout << "Build failed: " << e.what() << "\n";
+void coup_logger::print_build_failure(
+    const std::string& error_message) const noexcept {
+  std::cout << "Build failed: " << error_message << "\n";
 }
 
 // log run success
@@ -124,8 +124,9 @@ void coup_logger::print_run_success(double runtime) const noexcept {
 }
 
 // log run failure
-void coup_logger::print_run_failure(const std::exception& e) const noexcept {
-  std::cout << "Run failed: " << e.what() << "\n";
+void coup_logger::print_run_failure(
+    const std::string& error_message) const noexcept {
+  std::cout << "Run failed: " << error_message << "\n";
 }
 
 // log clean success
@@ -134,7 +135,8 @@ void coup_logger::print_clean_success(double runtime) const noexcept {
 }
 
 // log clean failure
-void coup_logger::print_clean_failure(const std::exception& e) const noexcept {
-  std::cout << "Clean failed: " << e.what() << "\n";
+void coup_logger::print_clean_failure(
+    const std::string& error_message) const noexcept {
+  std::cout << "Clean failed: " << error_message << "\n";
 }
-} // namespace coup
+}  // namespace coup

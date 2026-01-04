@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+
 #include "coup_project.hxx"
 
 namespace fs = std::filesystem;

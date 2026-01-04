@@ -1,13 +1,16 @@
+#include "../include/coup_system.hxx"
+
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
+#include <ranges>
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <ranges>
-#include <format>
-#include "../include/coup_system.hxx"
+
 #include "../include/coup_filesystem.hxx"
+#include "../include/coup_logger.hxx"
 #include "../include/coup_project.hxx"
 
 namespace fs = std::filesystem;
@@ -34,18 +37,16 @@ std::string make_compile_command(const fs::path& src_file) {
 std::string make_link_command(const std::vector<fs::path>& obj_files) {
   assert(!obj_files.empty());
   std::string link_command = "g++ -o prog ";
-  
-  #if(__cpp_lib_ranges >= 201911L)
-    std::ranges::for_each(obj_files, [&](const fs::path& obj) {
-      link_command += obj.string() + " ";
-    });
-  #else
-    std::for_each(begin(obj_files), end(obj_files),
-      [&](const fs::path& obj) {
-        link_command += obj.string() + " ";
-      }
-    );
-  #endif
+
+#if (__cpp_lib_ranges >= 201911L)
+  std::ranges::for_each(obj_files, [&](const fs::path& obj) {
+    link_command += obj.string() + " ";
+  });
+#else
+  std::for_each(begin(obj_files), end(obj_files), [&](const fs::path& obj) {
+    link_command += obj.string() + " ";
+  });
+#endif
   return link_command;
 }
 
@@ -54,17 +55,15 @@ std::string make_compile_and_link_command(
   assert(!src_files.empty());
   std::string compile_link_command = "g++ -o prog ";
 
-  #if(__cpp_lib_ranges >= 201911L)
-    std::ranges::for_each(src_files, [&](const fs::path& src) {
-      compile_link_command += src.string() + " ";
-    });
-  #else
-    std::for_each(begin(src_files), end(src_files),
-      [&](const fs::path& src) {
-        compile_link_command += src.string() + " ";
-      }
-    );
-  #endif
+#if (__cpp_lib_ranges >= 201911L)
+  std::ranges::for_each(src_files, [&](const fs::path& src) {
+    compile_link_command += src.string() + " ";
+  });
+#else
+  std::for_each(begin(src_files), end(src_files), [&](const fs::path& src) {
+    compile_link_command += src.string() + " ";
+  });
+#endif
   return compile_link_command;
 }
 
@@ -179,11 +178,11 @@ std::vector<std::string> get_dependencies(const fs::path& src_file) {
 }
 
 bool execute_build(const coup_project& proj, coup_logger& logger) {
-  for (const fs::path src : proj.get_project_src_files()) {
+  for (const fs::path& src : proj.get_project_src_files()) {
     std::string src_name = get_filename(src.string());
     std::string compile_command = make_compile_command(src);
     logger.print_compile(src_name, compile_command);
-    
+
     if (!execute_system_call(compile_command.c_str())) {
       std::string error_msg = "Failed to compile " + src_name;
       logger.print_error(error_msg);
@@ -195,37 +194,77 @@ bool execute_build(const coup_project& proj, coup_logger& logger) {
 
 bool execute_run(const coup_project& proj, coup_logger& logger) {
   if (!execute_build(proj, logger)) {
-
+    return false;
   }
+  fs::path exec("coup_exec");
+  if (!run(exec)) {
+    throw std::runtime_error("failed to run coup_exec");
+  }
+  return false;
 }
 
 bool execute_clean(const coup_project& proj, const coup_logger& logger) {
+  for (const fs::path& obj : proj.get_project_obj_files()) {
+    std::string obj_name = get_filename(obj.string());
+    std::string rm_command = make_system_command("rm", obj);
+    logger.print_remove(obj_name, rm_command);
 
+    if (!execute_system_call(rm_command.c_str())) {
+      std::string error_msg = "Failed to remove " + obj_name;
+      logger.print_error(error_msg);
+      return false;
+    }
+  }
+  return true;
 }
 
-bool execute_command(std::string_view command, std::string_view option) {
+void execute_command(std::string_view command, std::string_view option) {
   auto start = std::chrono::high_resolution_clock::now();
   coup_project proj = coup_project::make_project();
+  bool success;
+  std::string error_message;
 
   if (command == "build") {
     coup_logger logger(proj.num_src_files(), option == "verbose");
-    if (execute_build(proj, logger)) {
-      auto end = std::chrono::high_resolution_clock::now();
-      auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-      print_build_success(dur.count() / 1000.0);
-    } else {
-
+    try {
+      success = execute_build(proj, logger);
+    } catch (const std::exeception& e) {
+      error_message = e.what();
     }
   } else if (command == "run") {
     coup_logger logger(proj.num_src_files(), option == "verbose");
-    execute_run(proj, logger);
+    try {
+      success = execute_run(proj, logger);
+    } catch (const std::exception& e) {
+      error_message = e.what();
+    }
   } else if (command == "clean") {
     coup_logger logger(proj.num_obj_files(), option == "verbose");
-    execute_clean(proj, logger);
+    try {
+      success = execute_clean(proj, logger);
+    } catch (const std::exception& e) {
+      error_message = e.what();
+    }
   } else {
-    throw std::invalid_argument(
-      std::format("invalid command: {}", command)
-    );
+    throw std::invalid_argument(std::format("invalid command: {}", command));
+  }
+
+  if (success && error_message.empty()) {
+    auto end = std::chrono::high_resolution_clock::now();
+    auto dur =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    double runtime = dur.count() / 1000.0;
+    print_result_success(command, runtime);
+  } else if (error_message.empty()) {
+    if (command == "build") {
+      print_build_failure("unidentified error");
+    } else if (command == "run") {
+      print_run_failure("unidentified error");
+    } else {
+      print_clean_failure("unidentified error");
+    }
+  } else {
+    print_result_failure(command, error_message);
   }
 }
 
