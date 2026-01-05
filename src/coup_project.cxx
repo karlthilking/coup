@@ -119,7 +119,7 @@ void coup_project::set_dependencies() noexcept {
 bool coup_project::execute_build(bool verbose) const noexcept {
   std::mutex files_mtx;
   std::mutex log_mtx;
-  bool build_success = true; 
+  bool build_success = true;
   std::atomic<int> log_count{1};
   int log_total = src_files.size();
 
@@ -135,7 +135,7 @@ bool coup_project::execute_build(bool verbose) const noexcept {
           cur_file = std::move(src_files.back());
           src_files.pop_back();
         }
-        
+
         std::string src_name = cur_file.string();
         std::string compile_command = make_compile_command(cur_file);
 
@@ -144,7 +144,7 @@ bool coup_project::execute_build(bool verbose) const noexcept {
           print_compile(src_name, compile_command, log_count.fetch_add(1),
                         log_total, true);
         }
-                        
+
         if (!execute_system_call(compile_command.c_str())) {
           std::lock_guard<std::mutex> lock(log_mtx);
           print_error("Failed to compile" + src_name);
@@ -152,7 +152,7 @@ bool coup_project::execute_build(bool verbose) const noexcept {
         }
       }
     };
-    
+
     unsigned int num_threads = std::thread::hardware_concurrency();
     std::vector<std::thread> threads;
     threads.reserve(num_threads);
@@ -164,6 +164,7 @@ bool coup_project::execute_build(bool verbose) const noexcept {
       th.join();
     }
     return build_success;
+
   } else {
     auto build_worker = [&]() {
       for (;;) {
@@ -209,18 +210,12 @@ bool coup_project::execute_build(bool verbose) const noexcept {
 
 bool coup_project::execute_run(bool verbose) const noexcept {
   if (!execute_build(verbose)) {
-    
     return false;
   }
-  
 }
 
-bool coup_project::execute_clean(bool verbose) const noexcept {
-
-}
+bool coup_project::execute_clean(bool verbose) const noexcept {}
 
 void coup_project::execute_command(std::string_view command,
-                                   std::string_view option) const noexcept {
-  
-}
+                                   std::string_view option) const noexcept {}
 }  // namespace coup
