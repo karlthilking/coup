@@ -1,5 +1,3 @@
-#include "../include/coup_project.hxx"
-
 #include <algorithm>
 #include <array>
 #include <filesystem>
@@ -9,24 +7,31 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-
+#include "../include/coup_logger.hxx"
+#include "../include/coup_project.hxx"
 #include "../include/coup_file.hxx"
 #include "../include/coup_filesystem.hxx"
 
 namespace fs = std::filesystem;
 namespace coup {
 
-coup_project::coup_project(const std::vector<coup_file>& coup_files_,
-                           const std::vector<fs::path>& src_files_,
-                           const std::vector<fs::path>& obj_files_)
-    : coup_files(coup_files_), src_files(src_files_), obj_files(obj_files_) {}
+coup_project::coup_project(const fs::path& src, const fs::path& build,
+                           const std::vector<fs::path>& source_files,
+                           const std::vector<fs::path>& object_files) 
+  : src_dir(src),
+    build_dir(build),
+    src_files(source_files),
+    obj_files(object_files)
+{}
 
-coup_project::coup_project(std::vector<coup_file>&& coup_files_,
-                           std::vector<fs::path>&& src_files_,
-                           std::vector<fs::path>&& obj_files_) noexcept
-    : coup_files(std::move(coup_files_)),
-      src_files(std::move(src_files_)),
-      obj_files(std::move(obj_files_)) {}
+coup_project::coup_project(fs::path&& src, fs::path&& build, 
+                           std::vector<fs::path>&& source_files,
+                           std::vector<fs::path>&& object_files) noexcept
+  : src_dir(std::move(src)),
+    build_dir(std::move(build)),
+    src_files(std::move(source_files)),
+    obj_files(std::move(object_files))
+{}
 
 /* Obtains all source, header, and object files, associated by filestem
  * Returns a coup_project instance to the caller with properly initialized
@@ -35,47 +40,14 @@ coup_project::coup_project(std::vector<coup_file>&& coup_files_,
 coup_project coup_project::make_project() {
   // throws if no root is found
   fs::path root_dir = get_root_dir();
+  fs::path src_dir = get_src_dir(root_dir);
+  fs::path build_dir = get_out_dir(root_dir);
+  
+  std::vector<fs::path> src_files = find_src_files(src_dir);
+  std::vector<fs::path> obj_files = find_obj_files(build_dir);
 
-  // map of filename stem to associated paths (source, header, object)
-  std::unordered_map<std::string, std::array<fs::path, 3>> file_groups;
-
-  std::vector<fs::path> src_files;
-  std::vector<fs::path> obj_files;
-
-  std::thread src_handler([&] {
-    src_files = get_src_files(root_dir);
-    for (const fs::path& src : src_files) {
-      auto src_stem = get_stem(get_filename(src));
-      file_groups[src_stem][0] = src;
-    }
-  });
-
-  std::thread header_handler([&] {
-    auto header_files = get_header_files(root_dir);
-    for (const fs::path& header : header_files) {
-      auto header_stem = get_stem(get_filename(header));
-      file_groups[header_stem][1] = header;
-    }
-  });
-
-  std::thread obj_handler([&] {
-    obj_files = get_obj_files(root_dir);
-    for (const fs::path& obj : obj_files) {
-      auto obj_stem = get_stem(get_filename(obj));
-      file_groups[obj_stem][2] = obj;
-    }
-  });
-
-  src_handler.join();
-  header_handler.join();
-  obj_handler.join();
-
-  std::vector<coup_file> coup_files;
-  for (const auto& [name, files] : file_groups) {
-    coup_files.emplace_back(files[0], files[1], files[2]);
-  }
-  return coup_project(std::move(coup_files), std::move(src_files),
-                      std::move(obj_files));
+  return coup_project(std::move(src_dir), std::move(build_dir),
+                      std::move(src_files), std::move(obj_files));
 }
 
 // return source files
@@ -116,27 +88,35 @@ void coup_project::set_dependencies() noexcept {
   */
 }
 
-bool coup_project::execute_build(bool verbose) const noexcept {
-  std::mutex files_mtx;
+bool coup_project::execute_build(bool verbose) noexcept {
+  std::mutex src_files_mtx;
   std::mutex log_mtx;
-  bool build_success = true;
-  std::atomic<int> log_count{1};
-  int log_total = src_files.size();
+  bool build_success = true; 
+
+  unsigned int num_threads = std::thread::hardware_concurrency();
+  std::vector<std::thread> threads;
+  threads.reserve(num_threads);
+  
+  std::mutex obj_files_mtx;
+  std::vector<fs::path> new_obj_files;
 
   if (verbose) {
+    std::atomic<int> log_count{1};
+    int log_total = src_files.size();
+
     auto build_worker = [&]() {
       for (;;) {
         fs::path cur_file;
         {
-          std::lock_guard<std::mutex> lock(files_mtx);
+          std::lock_guard<std::mutex> lock(src_files_mtx);
           if (src_files.empty()) {
             return;
           }
           cur_file = std::move(src_files.back());
           src_files.pop_back();
         }
-
-        std::string src_name = cur_file.string();
+        
+        std::string src_name = get_filename(cur_file.string());
         std::string compile_command = make_compile_command(cur_file);
 
         {
@@ -144,28 +124,47 @@ bool coup_project::execute_build(bool verbose) const noexcept {
           print_compile(src_name, compile_command, log_count.fetch_add(1),
                         log_total, true);
         }
-
+                        
         if (!execute_system_call(compile_command.c_str())) {
           std::lock_guard<std::mutex> lock(log_mtx);
-          print_error("Failed to compile" + src_name);
+          print_error("Failed to compile: " + src_name);
           build_success = false;
+        } else {
+          fs::path obj_file = build_dir / replace_extension(src_name, "o");
+          {
+            std::lock_guard<std::mutex> lock(obj_files_mtx);
+            new_obj_files.push_back(obj_file);
+          }
         }
       }
     };
-
-    unsigned int num_threads = std::thread::hardware_concurrency();
-    std::vector<std::thread> threads;
-    threads.reserve(num_threads);
-
+    
     for (unsigned int i{}; i < num_threads; ++i) {
       threads.emplace_back(build_worker);
     }
     for (std::thread& th : threads) {
       th.join();
     }
-    return build_success;
-
+    
+    if (!build_success || src_files.size() != new_obj_files.size()) {
+      return false;
+    }
+    
+    std::string link_command = make_link_command(new_obj_files);
+    {
+      std::lock_guard<std::mutex> lock(log_mtx);
+      print_link(link_command, true);
+    }
+    
+    if (!execute_system_call(link_command.c_str())) {
+      std::lock_guard<std::mutex> lock(log_mtx);
+      print_error("Failed to link: coup_exec");
+      return false;
+    } else {
+      return true;
+    }
   } else {
+
     auto build_worker = [&]() {
       for (;;) {
         fs::path cur_file;
@@ -178,7 +177,7 @@ bool coup_project::execute_build(bool verbose) const noexcept {
           src_files.pop_back();
         }
 
-        std::string src_name = cur_file.string();
+        std::string src_name = get_filename(cur_file.string());
         std::string compile_command = make_compile_command(cur_file);
 
         {
@@ -193,11 +192,7 @@ bool coup_project::execute_build(bool verbose) const noexcept {
         }
       }
     };
-
-    unsigned int num_threads = std::thread::hardware_concurrency();
-    std::vector<std::thread> threads;
-    threads.reserve(num_threads);
-
+    
     for (unsigned int i{}; i < num_threads; ++i) {
       threads.emplace_back(build_worker);
     }
@@ -208,14 +203,104 @@ bool coup_project::execute_build(bool verbose) const noexcept {
   }
 }
 
-bool coup_project::execute_run(bool verbose) const noexcept {
-  if (!execute_build(verbose)) {
+bool coup_project::execute_run(bool verbose) noexcept {
+  // TODO: executable may require full path if
+  // created in build directory
+  if (!fs::exists("coup_exec")) {
     return false;
+  } else {
+    return run(fs::path("coup_exec"));
   }
 }
 
-bool coup_project::execute_clean(bool verbose) const noexcept {}
+bool coup_project::execute_clean(bool verbose) noexcept {
+  std::mutex file_mtx;
+  std::mutex log_mtx; 
+  bool clean_success = true;
+  unsigned int num_threads = std::thread::hardware_concurrency();
+  std::vector<std::threads> threads;
+  threads.reserve(num_threads);
+
+  if (verbose) {
+    std::atomic<int> log_count{1};
+    int log_total = obj_files.size();
+
+    auto clean_worker = [&]() {
+      for (;;) {
+        fs::path cur_file;
+        {
+          std::lock_guard<std::mutex> lock(file_mtx);
+          if (obj_files.empty()) {
+            return;
+          }
+          cur_file = obj_files.back();
+          obj_files.pop_back();
+        }
+        
+        std::string obj_name = get_filename(cur_file.string());
+        std::string rm_command = make_system_command("rm", cur_file);
+        
+        {
+          std::lock_guard<std::mutex> lock(log_mtx);
+          print_remove(obj_name, rm_command, log_count.fetch_add(1), log_total, true);
+        }
+        
+        if (!execute_system_call(rm_command.c_str())) {
+          std::lock_guard<std::mutex> lock(log_mtx);
+          print_error("Failed to remove " + obj_name);
+          clean_success = false;
+        }
+      }
+    }
+
+    for (unsigned int i{}; i < num_threads; ++i) {
+      threads.emplace_back(worker);
+    }
+    for (std::thread& th: threads) {
+      th.join();
+    }
+    return clean_success;
+  } else {
+    auto clean_worker = [&]() {
+      for (;;) {
+        fs::path cur_file;
+        {
+          std::lock_guard<std::mutex> lock(file_mtx);
+          if (obj_files.empty()) {
+            return;
+          }
+          cur_file = obj_files.back();
+          obj_files.pop_back();
+        }
+
+        std::string obj_name = get_filename(cur_file.string());
+        std::string rm_command = make_system_command("rm", cur_file);
+
+        {
+          std::lock_guard<std::mutex> lock(log_mtx);
+          print_remove(obj_name, rm_command, 0, 0, false);
+        }
+
+        if (!execute_system_call(rm_command)) {
+          std::lock_guard<std::mutex> lock(log_mtx);
+          print_error("Failed to clean: " + obj_name);
+          clean_success = false;
+        }
+      }
+    };
+    
+    for (unsigned int i{}; i < num_threads; ++i) {
+      threads.emplace_back(clean_worker);
+    }
+    for (std::thread& th : threads) {
+      th.join();
+    }
+    return clean_success;
+  }
+}
 
 void coup_project::execute_command(std::string_view command,
-                                   std::string_view option) const noexcept {}
+                                   std::string_view option) const noexcept {
+  
+}
 }  // namespace coup
