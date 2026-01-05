@@ -11,9 +11,9 @@
 using namespace coup;
 int main(int argc, char* argv[]) {
   if (argc < 2) {
-    coup_logger::print_usage();
+    coup::print_usage();
     return -1;
   }
-
-  coup_project proj = coup_project::make_project();
+  
+  
 }

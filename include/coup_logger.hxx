@@ -34,5 +34,5 @@ void print_run_failure(const std::string& error_message);
 void print_clean_success(double runtime);
 
 void print_clean_failure(const std::string& error_message);
-};
+
 }  // namespace coup
