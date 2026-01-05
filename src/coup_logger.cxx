@@ -92,7 +92,8 @@ void print_result_success(std::string_view command, double runtime) {
 
 /*  Determine which command failed and delegate logging to matching function
  */
-void print_result_failure(std::string_view command, const std::string& error_message) {
+void print_result_failure(std::string_view command,
+                          const std::string& error_message) {
   if (command == "build") {
     print_build_failure(error_message);
   } else if (command == "run") {
