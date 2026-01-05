@@ -74,7 +74,7 @@ coup_project coup_project::make_project() {
   for (const auto& [name, files] : file_groups) {
     coup_files.emplace_back(files[0], files[1], files[2]);
   }
-  return coup_project(std::move(coup_files) std::move(src_files),
+  return coup_project(std::move(coup_files), std::move(src_files),
                       std::move(obj_files));
 }
 
@@ -114,5 +114,113 @@ void coup_project::set_dependencies() noexcept {
     }
   });
   */
+}
+
+bool coup_project::execute_build(bool verbose) const noexcept {
+  std::mutex files_mtx;
+  std::mutex log_mtx;
+  bool build_success = true; 
+  std::atomic<int> log_count{1};
+  int log_total = src_files.size();
+
+  if (verbose) {
+    auto build_worker = [&]() {
+      for (;;) {
+        fs::path cur_file;
+        {
+          std::lock_guard<std::mutex> lock(files_mtx);
+          if (src_files.empty()) {
+            return;
+          }
+          cur_file = std::move(src_files.back());
+          src_files.pop_back();
+        }
+        
+        std::string src_name = cur_file.string();
+        std::string compile_command = make_compile_command(cur_file);
+
+        {
+          std::lock_guard<std::mutex> lock(log_mtx);
+          print_compile(src_name, compile_command, log_count.fetch_add(1),
+                        log_total, true);
+        }
+                        
+        if (!execute_system_call(compile_command.c_str())) {
+          std::lock_guard<std::mutex> lock(log_mtx);
+          print_error("Failed to compile" + src_name);
+          build_success = false;
+        }
+      }
+    };
+    
+    unsigned int num_threads = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads;
+    threads.reserve(num_threads);
+
+    for (unsigned int i{}; i < num_threads; ++i) {
+      threads.emplace_back(build_worker);
+    }
+    for (std::thread& th : threads) {
+      th.join();
+    }
+    return build_success;
+  } else {
+    auto build_worker = [&]() {
+      for (;;) {
+        fs::path cur_file;
+        {
+          std::lock_guard<std::mutex> lock(files_mtx);
+          if (src_files.empty()) {
+            return;
+          }
+          cur_file = std::move(src_files.back());
+          src_files.pop_back();
+        }
+
+        std::string src_name = cur_file.string();
+        std::string compile_command = make_compile_command(cur_file);
+
+        {
+          std::lock_guard<std::mutex> lock(cout_mtx);
+          print_compile(src_name, compile_command, 0, 0, false);
+        }
+
+        if (!execute_system_call(compile_command.c_str())) {
+          std::lock_guard<std::mutex> lock(log_mtx);
+          print_error("Failed to compile " + src_name);
+          build_success = false;
+        }
+      }
+    };
+
+    unsigned int num_threads = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads;
+    threads.reserve(num_threads);
+
+    for (unsigned int i{}; i < num_threads; ++i) {
+      threads.emplace_back(build_worker);
+    }
+    for (std::thread& th : threads) {
+      th.join();
+    }
+    return build_success;
+  }
+}
+
+bool coup_project::execute_run(bool verbose) const noexcept {
+  if (!execute_build(verbose)) {
+    
+    return false;
+  }
+  
+}
+
+bool coup_project::execute_clean(bool verbose) const noexcept {
+
+}
+
+void coup_project::execute_command(std::string_view command,
+                                   std::string_view option) const noexcept {
+  
 }
 }  // namespace coup
