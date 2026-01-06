@@ -20,21 +20,27 @@
 namespace fs = std::filesystem;
 namespace coup {
 
-coup_project::coup_project(const fs::path& src, const fs::path& build,
+coup_project::coup_project(const fs::path& src, 
+                           const fs::path& build,
+                           const fs::path& exec,
                            const std::vector<fs::path>& source_files,
                            const std::vector<fs::path>& object_files)
     : src_dir(src),
       build_dir(build),
+      exec_path(exec),
       src_files(source_files),
       obj_files(object_files)
 {
 }
 
-coup_project::coup_project(fs::path&& src, fs::path&& build,
+coup_project::coup_project(fs::path&& src, 
+                           fs::path&& build, 
+                           fs::path&& exec, 
                            std::vector<fs::path>&& source_files,
                            std::vector<fs::path>&& object_files) noexcept
     : src_dir(std::move(src)),
       build_dir(std::move(build)),
+      exec_path(std::move(exec)),
       src_files(std::move(source_files)),
       obj_files(std::move(object_files))
 {
@@ -54,8 +60,11 @@ coup_project coup_project::make_project()
   std::vector<fs::path> src_files = find_src_files(src_dir);
   std::vector<fs::path> obj_files = find_obj_files(build_dir);
 
+  fs::path exec_path = build_dir / "coup_exec";
+
   return coup_project(std::move(src_dir), std::move(build_dir),
-                      std::move(src_files), std::move(obj_files));
+                      std::move(exec_path), std::move(src_files),
+                      std::move(obj_files));
 }
 
 // return source files
@@ -178,12 +187,11 @@ std::optional<std::string> coup_project::execute_build(bool verbose) noexcept
 
 std::optional<std::string> coup_project::execute_run(bool verbose) noexcept
 {
-  fs::path exec_file = build_dir / "coup_exec";
-  if (!fs::exists(exec_file))
+  if (!fs::exists(exec_path))
   {
     return "No executable found, build your project to create one";
   }
-  else if (!run(exec_file))
+  else if (!run(exec_path))
   {
     return "Failed to run coup_exec";
   }
@@ -195,6 +203,11 @@ std::optional<std::string> coup_project::execute_run(bool verbose) noexcept
 
 std::optional<std::string> coup_project::execute_clean(bool verbose) noexcept
 {
+  if (fs::exists(exec_path)) 
+  {
+    obj_files.push_back(exec_path);
+  }
+
   std::mutex obj_files_mtx;
   std::mutex log_mtx;
   bool clean_success = true;
@@ -203,6 +216,7 @@ std::optional<std::string> coup_project::execute_clean(bool verbose) noexcept
   int log_total = obj_files.size();
 
   std::string error_message = "";
+
 
   auto clean_worker = [&]() {
     for (;;)

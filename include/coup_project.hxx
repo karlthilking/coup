@@ -14,16 +14,20 @@ class coup_project
  private:
   fs::path src_dir;
   fs::path build_dir;
+  fs::path exec_path;
   std::vector<fs::path> src_files;
   std::vector<fs::path> obj_files;
 
   /*  Privately accessed constructors, only accessed
    *  directly by the make_project function
    */
-  coup_project(const fs::path& src, const fs::path& build,
+  coup_project(const fs::path& src, 
+               const fs::path& build,
+               const fs::path& exec,
                const std::vector<fs::path>& source_files,
                const std::vector<fs::path>& object_files);
-  coup_project(fs::path&& src, fs::path&& build,
+
+  coup_project(fs::path&& src, fs::path&& build, fs::path&& exec,
                std::vector<fs::path>&& source_files,
                std::vector<fs::path>&& object_files) noexcept;
 
