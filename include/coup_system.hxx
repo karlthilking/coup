@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+
+#include "coup_logger.hxx"
 #include "coup_project.hxx"
 
 namespace fs = std::filesystem;
@@ -33,13 +35,4 @@ bool make_directory(const fs::path& dir);
 
 // return file dependencies as a vector of file names
 std::vector<std::string> get_dependencies(const fs::path& src_file);
-
-// command execution
-bool execute_build(const coup_project& proj, const coup_logger& logger);
-
-bool execute_run(const coup_project& proj, const coup_logger& logger);
-
-bool execute_clean(const coup_project& proj, const coup_logger& logger);
-
-bool execute_command(std::string_view command, std::string_view option);
 }  // namespace coup

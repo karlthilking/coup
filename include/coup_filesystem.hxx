@@ -12,17 +12,22 @@ namespace fs = std::filesystem;
 namespace coup {
 // return value or throw runtime error
 template <typename T>
-inline T unwrap_or_throw(std::optional<T> opt) {
-  if (opt.has_value()) {
-    return opt.value();
-  } else {
+inline T unwrap_or_throw(std::optional<T> opt)
+{
+  if (opt.has_value())
+  {
+    return *opt;
+  }
+  else
+  {
     throw std::runtime_error("No optional value");
   }
 }
 
 // return optional value or specified fallback value
 template <typename T>
-inline T unwrap_or(std::optional<T> opt, T fallback) {
+inline T unwrap_or(std::optional<T> opt, T fallback)
+{
   return opt.value_or(fallback);
 }
 
