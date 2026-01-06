@@ -1,14 +1,16 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
+#include <string>
 #include <vector>
 
-#include "../include/coup_file.hxx"
-
 namespace fs = std::filesystem;
-namespace coup {
+namespace coup 
+{
 
-class coup_project {
+class coup_project
+{
  private:
   fs::path src_dir;
   fs::path build_dir;
@@ -46,35 +48,35 @@ class coup_project {
   // return number of project object files
   int num_obj_files() const noexcept;
 
-  // Sets dependencies for each coup_file
-  void set_dependencies() noexcept;
-  
   /*  Compile all source files and link into an executable
    *  Verbose parameter indicates verbose log output option
-   *  Returns true if build succeeds, false otherwise
-   */ 
-  bool execute_build(bool verbose) noexcept;
+   *  Returns nullopt if the build succeeds, or an error
+   *  message if any errors occur during the build process
+   */
+  std::optional<std::string> execute_build(bool verbose) noexcept;
 
   /*  Compile all source files, link into executable, and run executable
    *  Verbose parameter indicates verbose log output option
-   *  Returns true if run procedure succeeds, false otherwise
+   *  Returns nullopt if the executable runs, or an error
+   *  message if running fails
    */
-  bool execute_run(bool verbose) noexcept;
+  std::optional<std::string> execute_run(bool verbose) noexcept;
 
   /*  Removes all build artifacts from project
    *  Verbose parameter indicates verbose log output option
-   *  Returns true if clean finishes successfully, false otherwise
+   *  Returns nullopt if the build succeeds, or an error
+   *  message if an error occurs during the clean
    */
-  bool execute_clean(bool verbose) noexcept;
+  std::optional<std::string> execute_clean(bool verbose) noexcept;
 
-  /*  Receives a string and string, and delegates work to the 
+  /*  Receives a string and string, and delegates work to the
    *  correct function
-   *  Checks result of delegated function to handle properly reporting the 
+   *  Checks result of delegated function to handle properly reporting the
    *  result of an executed command
    *  Valid command strings are: build, run, clean
    *  Option: enable verbose output if option == verbose otherwise disable
    */
-  void execute_command(std::string_view command, std::string_view option) noexcept;
+  void execute_command(const std::string& command, const std::string& option);
 };
 
 }  // namespace coup
