@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
@@ -9,7 +8,6 @@
 #include <format>
 #include "../include/coup_system.hxx"
 #include "../include/coup_filesystem.hxx"
-=======
 #include "../include/coup_system.hxx"
 
 #include <algorithm>
@@ -23,135 +21,82 @@
 
 #include "../include/coup_filesystem.hxx"
 #include "../include/coup_logger.hxx"
->>>>>>> refs/remotes/origin/main
 #include "../include/coup_project.hxx"
 
 namespace fs = std::filesystem;
-namespace coup {
+namespace coup
+{
 
 // executes a system call/commnad, returns true if successful, false otherwise
-<<<<<<< HEAD
-bool execute_system_call(const char* command) {
-=======
 bool execute_system_call(const char* command)
 {
->>>>>>> refs/remotes/origin/main
   int result = std::system(command);
   return result == 0;
 }
 
 // composes a compile command for a given source file
-<<<<<<< HEAD
-std::string make_compile_command(const fs::path& src_file) {
-=======
 std::string make_compile_command(const fs::path& src_file)
 {
->>>>>>> refs/remotes/origin/main
   assert(fs::exists(src_file));
 
   std::string src_name = src_file.string();
   assert(!src_name.empty());
 
-<<<<<<< HEAD
-  std::string compile_command = "g++ -c " + src_name;
-=======
   std::string compile_command = "g++ -std=c++20 -c " + src_name;
->>>>>>> refs/remotes/origin/main
   return compile_command;
 }
 
 // composes a link command for a given list of object files
-<<<<<<< HEAD
-std::string make_link_command(const std::vector<fs::path>& obj_files) {
-  assert(!obj_files.empty());
-  std::string link_command = "g++ -o prog ";
-  
-  #if(__cpp_lib_ranges >= 201911L)
-    std::ranges::for_each(obj_files, [&](const fs::path& obj) {
-      link_command += obj.string() + " ";
-    });
-  #else
-    std::for_each(begin(obj_files), end(obj_files),
-      [&](const fs::path& obj) {
-        link_command += obj.string() + " ";
-      }
-    );
-  #endif
-=======
 std::string make_link_command(const std::vector<fs::path>& obj_files)
 {
   assert(!obj_files.empty());
   std::string link_command = "g++ -std=c++20 -o coup_exec ";
 
 #if (__cpp_lib_ranges >= 201911L)
-  std::ranges::for_each(obj_files, [&](const fs::path& obj) {
+  std::ranges::for_each(obj_files, [&](const fs::path& obj) 
+  {
     link_command += obj.string() + " ";
   });
 #else
-  std::for_each(begin(obj_files), end(obj_files), [&](const fs::path& obj) {
+  std::for_each(begin(obj_files), end(obj_files), [&](const fs::path& obj) 
+  {
     link_command += obj.string() + " ";
   });
 #endif
->>>>>>> refs/remotes/origin/main
   return link_command;
 }
 
-std::string make_compile_and_link_command(
-<<<<<<< HEAD
-    const std::vector<fs::path>& src_files) {
-  assert(!src_files.empty());
-  std::string compile_link_command = "g++ -o prog ";
-
-  #if(__cpp_lib_ranges >= 201911L)
-    std::ranges::for_each(src_files, [&](const fs::path& src) {
-      compile_link_command += src.string() + " ";
-    });
-  #else
-    std::for_each(begin(src_files), end(src_files),
-      [&](const fs::path& src) {
-        compile_link_command += src.string() + " ";
-      }
-    );
-  #endif
-=======
-    const std::vector<fs::path>& src_files)
+std::string make_compile_and_link_command
+(const std::vector<fs::path>& src_files)
 {
   assert(!src_files.empty());
   std::string compile_link_command = "g++ -std=c++20 -o coup_exec ";
 
 #if (__cpp_lib_ranges >= 201911L)
-  std::ranges::for_each(src_files, [&](const fs::path& src) {
+  std::ranges::for_each(src_files, [&](const fs::path& src) 
+  {
     compile_link_command += src.string() + " ";
   });
 #else
-  std::for_each(begin(src_files), end(src_files), [&](const fs::path& src) {
+  std::for_each(begin(src_files), end(src_files), [&](const fs::path& src)
+  {
     compile_link_command += src.string() + " ";
   });
 #endif
->>>>>>> refs/remotes/origin/main
   return compile_link_command;
 }
 
 // composes a run command for a given executable
-<<<<<<< HEAD
-std::string make_run_command(const fs::path& exec_file) {
-=======
 std::string make_run_command(const fs::path& exec_file)
 {
->>>>>>> refs/remotes/origin/main
   assert(fs::exists(exec_file));
 
   return exec_file.string();
 }
 
 // composes a -MMD command for a given source file
-<<<<<<< HEAD
-std::string make_mm_command(const fs::path& src_file,
-                            const fs::path& dep_file) {
-=======
 std::string make_mm_command(const fs::path& src_file, const fs::path& dep_file)
 {
->>>>>>> refs/remotes/origin/main
   std::string mm_command =
       "g++ -MM " + src_file.string() + " > " + dep_file.string();
   return mm_command;
@@ -159,38 +104,21 @@ std::string make_mm_command(const fs::path& src_file, const fs::path& dep_file)
 
 // composes a system command with a command and file (e.g. cat main.cpp)
 std::string make_system_command(const std::string& command,
-<<<<<<< HEAD
-                                const fs::path& file) {
-=======
                                 const fs::path& file)
 {
->>>>>>> refs/remotes/origin/main
   return command + " " + file.string();
 }
 
 // obtain compile command for a single source file and execute
 // returns true if successful, false otherwise
-<<<<<<< HEAD
-bool compile(const fs::path& src_file) {
-=======
 bool compile(const fs::path& src_file)
 {
->>>>>>> refs/remotes/origin/main
   std::string compile_command = make_compile_command(src_file);
   bool result = execute_system_call(compile_command.c_str());
   return result;
 }
 
 // compile each source file in a collection
-<<<<<<< HEAD
-bool compile(const std::vector<fs::path>& src_files) {
-  assert(!src_files.empty());
-  bool success = true;
-
-  for (const fs::path& src : src_files) {
-    assert(fs::exists(src));
-    if (!compile(src)) {
-=======
 bool compile(const std::vector<fs::path>& src_files)
 {
   assert(!src_files.empty());
@@ -201,7 +129,6 @@ bool compile(const std::vector<fs::path>& src_files)
     assert(fs::exists(src));
     if (!compile(src))
     {
->>>>>>> refs/remotes/origin/main
       success = false;
       break;
     }
@@ -211,12 +138,8 @@ bool compile(const std::vector<fs::path>& src_files)
 
 // obtain command to link object files and execute linkage
 // return true if successful, false otherwise
-<<<<<<< HEAD
-bool link(const std::vector<fs::path>& obj_files) {
-=======
 bool link(const std::vector<fs::path>& obj_files)
 {
->>>>>>> refs/remotes/origin/main
   std::string link_command = make_link_command(obj_files);
   bool result = execute_system_call(link_command.c_str());
   return result;
@@ -224,12 +147,8 @@ bool link(const std::vector<fs::path>& obj_files)
 
 // obtain command to compile and link source files in one step
 // return true if successful, false otherwise
-<<<<<<< HEAD
-bool compile_and_link(const std::vector<fs::path>& src_files) {
-=======
 bool compile_and_link(const std::vector<fs::path>& src_files)
 {
->>>>>>> refs/remotes/origin/main
   std::string compile_link_command = make_compile_and_link_command(src_files);
   bool result = execute_system_call(compile_link_command.c_str());
   return result;
@@ -237,12 +156,8 @@ bool compile_and_link(const std::vector<fs::path>& src_files)
 
 // obtain command to run a given executable
 // return true if successful, false otherwise
-<<<<<<< HEAD
-bool run(const fs::path& exec_file) {
-=======
 bool run(const fs::path& exec_file)
 {
->>>>>>> refs/remotes/origin/main
   std::string run_command = make_run_command(exec_file);
   bool result = execute_system_call(run_command.c_str());
   return result;
@@ -250,12 +165,8 @@ bool run(const fs::path& exec_file)
 
 // obtain command to remove a given file
 // return true if command executes and file is removed, false otherwise
-<<<<<<< HEAD
-bool remove_file(const fs::path& file) {
-=======
 bool remove_file(const fs::path& file)
 {
->>>>>>> refs/remotes/origin/main
   assert(fs::exists(file));
 
   std::string rm_command = make_system_command("rm", file);
@@ -265,12 +176,8 @@ bool remove_file(const fs::path& file)
 
 // obtain command to remove a given directory
 // returns true if command executes and directory is removed, false otherwise
-<<<<<<< HEAD
-bool remove_directory(const fs::path& dir) {
-=======
 bool remove_directory(const fs::path& dir)
 {
->>>>>>> refs/remotes/origin/main
   assert(fs::exists(dir));
 
   std::string rmdir_command = make_system_command("rmdir", dir);
@@ -280,12 +187,8 @@ bool remove_directory(const fs::path& dir)
 
 // obtain command to create a given directory
 // returns true if command executes and directory is created, false otherwise
-<<<<<<< HEAD
-bool make_directory(const fs::path& dir) {
-=======
 bool make_directory(const fs::path& dir)
 {
->>>>>>> refs/remotes/origin/main
   std::string mkdir_command = make_system_command("mkdir", dir);
   bool result = execute_system_call(mkdir_command.c_str());
   return result && fs::exists(dir);
@@ -294,12 +197,8 @@ bool make_directory(const fs::path& dir)
 // obtain command to create dependency file for a given source file
 // parse dependecy file to obtain all individual dependencies
 // return a vector of filenames representing dependencies
-<<<<<<< HEAD
-std::vector<std::string> get_dependencies(const fs::path& src_file) {
-=======
 std::vector<std::string> get_dependencies(const fs::path& src_file)
 {
->>>>>>> refs/remotes/origin/main
   auto dep_file = make_dep_file(src_file);
   std::string mm_command = make_mm_command(src_file, dep_file);
 
@@ -309,84 +208,4 @@ std::vector<std::string> get_dependencies(const fs::path& src_file)
   std::vector<std::string> dependencies = parse_dependency_file(dep_file);
   return dependencies;
 }
-<<<<<<< HEAD
-
-bool execute_build(const coup_project& proj, coup_logger& logger) {
-  for (const fs::path src : proj.get_project_src_files()) {
-    std::string src_name = get_filename(src.string());
-    std::string compile_command = make_compile_command(src);
-    logger.print_compile(src_name, compile_command);
-    
-    if (!execute_system_call(compile_command.c_str())) {
-      std::string error_msg = "Failed to compile " + src_name;
-      logger.print_error(error_msg);
-      return false;
-    }
-  }
-  return true;
-}
-
-bool execute_run(const coup_project& proj, coup_logger& logger) {
-  if (!execute_build(proj, logger)) {
-
-  }
-}
-
-bool execute_clean(const coup_project& proj, const coup_logger& logger) {
-
-}
-
-bool execute_command(std::string_view command, std::string_view option) {
-  auto start = std::chrono::high_resolution_clock::now();
-  coup_project proj = coup_project::make_project();
-  bool success;
-  std::string error_message;
-
-  if (command == "build") {
-    coup_logger logger(proj.num_src_files(), option == "verbose");
-    try {
-      success = execute_build(proj, logger);
-    } catch (const std::exeception& e) {
-      error_message = e.what();
-    }
-  } else if (command == "run") {
-    coup_logger logger(proj.num_src_files(), option == "verbose");
-    try {
-      success = execute_run(proj, logger);
-    } catch (const std::exception& e) {
-      error_message = e.what();
-    }
-  } else if (command == "clean") {
-    coup_logger logger(proj.num_obj_files(), option == "verbose");
-    try {
-      success = execute_clean(proj, logger);
-    } catch (const std::exception& e) {
-      error_message = e.what();
-    }
-  } else {
-    throw std::invalid_argument(
-      std::format("invalid command: {}", command)
-    );
-  }
-
-  if (success && error_message.empty()) {
-    auto end = std::chrono::high_resolution_clock::now();
-    auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    double runtime = dur.count() / 1000.0;
-    print_result_success(command, runtime);
-  } else if (error_message.empty()) {
-    if (command == "build") {
-      print_build_failure("unidentified error");
-    } else if (command == "run") {
-      print_run_failure("unidentified error");
-    } else {
-      print_clean_failure("unidentified error");
-    }
-  } else {
-    print_result_failure(command, error_message);
-  }
-}
-
-=======
->>>>>>> refs/remotes/origin/main
 }  // namespace coup

@@ -39,7 +39,7 @@ public:
     threadsafe_vector()
         : data_(new T[10]),
           size_(0),
-          capacity_(10),
+          capacity_(10)
     {}
 
     ~threadsafe_vector()
@@ -89,7 +89,7 @@ public:
         return size_ == 0;
     }
 
-    void reserve(size_t capacity, bool)
+    void reserve(size_t capacity)
     {
         std::lock_guard<std::mutex> lock(mtx);
         if (capacity <= capacity_)

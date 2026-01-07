@@ -56,9 +56,8 @@ TEST_F(test_threadsafe_vector, reserve_test)
     {
         v.reserve(500);
     });
-    threads[2].join();
-    EXPECT_EQ(v.capacity(), 500);
+    for (std::thread& th : threads) { th.join(); }
 
-    threads[0].join();
-    theards[1].join();
+    EXPECT_EQ(v.capacity(), 500);
+    EXPECT_EQ(v.size(), 200);
 }
