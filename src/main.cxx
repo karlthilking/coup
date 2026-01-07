@@ -1,16 +1,36 @@
-#include <cstdlib>
+#include <chrono>
+#include <iostream>
+#include <stdexcept>
 #include <string>
 
-#include "../include/commands.hxx"  // command_type, build_command, run_command, clean_command, execute_cmd, create_command
+#include "../include/coup_logger.hxx"
+#include "../include/coup_project.hxx"
+#include "../include/coup_system.hxx"
 
-int main(int argc, char** argv) {
-  if (argc < 1) {
-    return 1;
+using namespace coup;
+int main(int argc, char* argv[])
+{
+  if (argc < 2)
+  {
+    print_usage();
+    return -1;
   }
 
-  std::string cmd_str = argv[1];
-  coup::command_type cmd = coup::create_command(cmd_str);
-  bool result = coup::execute_cmd(cmd);
+  std::string command = argv[1];
+  std::string option;
+  if (argc > 2) {
+    option = argv[2];
+  }
 
+  coup_project proj = coup_project::make_project();
+  try 
+  {
+    proj.execute_command(command, option);
+  } 
+  catch (const std::exception& e)
+  {
+    print_usage();
+    return -1;
+  }
   return 0;
 }
