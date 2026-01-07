@@ -1,7 +1,6 @@
 #include "../include/coup_project.hxx"
 
 #include <algorithm>
-#include <array>
 #include <cassert>
 #include <filesystem>
 #include <optional>

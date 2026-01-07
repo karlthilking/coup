@@ -57,6 +57,7 @@ set(COUP_HEADERS
   include/coup_system.hxx
   include/coup_project.hxx
   include/coup_logger.hxx
+  include/threadsafe_vector.hxx
 )
 
 set(COUP_SOURCES
@@ -92,6 +93,7 @@ if(ENABLE_TESTING)
   FetchContent_MakeAvailable(googletest)
   add_executable(coup_tests
     tests/filesystem_test.cxx
+    tests/threadsafe_vector_test.cxx
   )
   target_link_libraries(coup_tests PRIVATE
     GTest::gtest_main
