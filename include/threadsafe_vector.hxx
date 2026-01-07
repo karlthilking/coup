@@ -86,11 +86,13 @@ public:
 
     T& front() noexcept
     {
+        std::lock_guard<std::mutex> lock(mtx);
         return data_[0];
     }
 
     T& back() noexcept
     {
+        std::lock_guard<std::mutex> lock(mtx);
         return data_[size_ - 1];
     }
 
