@@ -2,6 +2,8 @@
 #include <mutex>
 #include <type_traits>
 #include <utility>
+#include <algorithm>
+#include <memory>
 
 namespace coup
 {
@@ -18,7 +20,8 @@ private:
     // assumes caller is holding the lock
     void resize(size_t new_capacity)
     {
-        T* new_data = static_cast<T*>(operator new[](new_capacity * sizeof(T)));
+        T* new_data = static_cast<T*>(operator new[]
+                                     (new_capacity * sizeof(T)));
         for (size_t i{}; i < size_; ++i)
         {
             if (std::is_nothrow_move_constructible_v<T>)
@@ -41,6 +44,14 @@ public:
           size_(0),
           capacity_(10)
     {}
+    
+    threadsafe_vector(const T& value, size_t count)
+    {
+        size_ = count;
+        capacity_ = std::max(count, static_cast<size_t>(10));
+        data_ = static_cast<T*>(operator new[](capacity_));
+        std::uninitialized_fill(data_, data_ + count, value);
+    }
 
     ~threadsafe_vector()
     {
@@ -123,7 +134,8 @@ public:
             return;
         }
 
-        T* new_data = static_cast<T*>(operator new[](new_capacity * sizeof(T)));
+        T* new_data = static_cast<T*>(operator new[]
+                                     (new_capacity * sizeof(T)));
 
         for (size_t i{}; i < size_; ++i)
         {
