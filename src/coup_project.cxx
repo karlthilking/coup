@@ -203,9 +203,10 @@ std::optional<std::string> coup_project::execute_run(bool verbose) noexcept
 std::optional<std::string> coup_project::execute_clean(bool verbose) noexcept
 {
   if (fs::exists(exec_path)) 
-  {
     obj_files.push_back(exec_path);
-  }
+
+  if (obj_files.empty())
+      return "Nothing to clean";
 
   std::mutex obj_files_mtx;
   std::mutex log_mtx;

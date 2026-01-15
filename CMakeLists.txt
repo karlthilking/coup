@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 project(coup)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -66,6 +66,7 @@ set(COUP_SOURCES
   src/coup_system.cxx
   src/coup_project.cxx
   src/coup_logger.cxx
+  src/coup_json.cxx
 )
 
 add_library(coup_lib STATIC ${COUP_SOURCES} ${COUP_HEADERS})
@@ -103,3 +104,4 @@ if(ENABLE_TESTING)
   include(GoogleTest)
   gtest_discover_tests(coup_tests)
 endif()
+

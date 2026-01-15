@@ -89,8 +89,8 @@ TEST_F(test_threadsafe_vector, emplace_back_test)
 
     EXPECT_TRUE(v.size() == 80);
     for (size_t i{}; i < 80; ++i)
-    {
         EXPECT_EQ(v[i], "hello");
-    }
     EXPECT_EQ(v.front(), v.back());
 }
+
+
