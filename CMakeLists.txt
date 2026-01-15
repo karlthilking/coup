@@ -4,100 +4,82 @@ project(coup)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(ENABLE_ASAN OFF)
-option(ENABLE_UBSAN OFF)
-option(ENABLE_TSAN OFF)
-option(ENABLE_WARNINGS ON)
-option(WARNINGS_AS_ERRORS OFF)
-option(ENABLE_CLANG_TIDY OFF)
-option(ENABLE_TESTING ON)
+add_compile_options(
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Werror
+    -fsanitize=address
+    -fsanitize=undefined
+)
+add_link_options(
+    -fsanitize=address
+    -fsanitize=undefined
+)
 
-if(ENABLE_WARNINGS)
-	add_compile_options(
-		-Wall,
-		-Wextra,
-		-Wpedantic,
-	)
-	if(WARNINGS_AS_ERRORS)
-		add_compile_options(-Werror)
-	endif()
-endif()
-
-if(ENABLE_ASAN)
-	add_compile_options(-fsanitize=address)
-	add_link_options(-fsanitize=address)
-endif()
-
-if(ENABLE_UBSAN)
-	add_compile_options(-fsanitize=undefined)
-	add_link_options(-fsanitize=undefined)
-endif()
-
-if(ENABLE_TSAN)
-	add_compile_options(-fsanitize=thread)
-	add_link_options(-fsanitize=thread)
-endif()
-
-if(ENABLE_CLANG_TIDY)
-	find_program(CLANG_TIDY_PROGRAM clang-tidy)
-	if(CLANG_TIDY_PROGRAM)
-		set(CMAKE_CXX_CLANG_TIDY
-			${CLANG_TIDY_PROGRAM};
-			-header-filter=.*include/.*;
-			-warnings-as-errors=*;
-		)
-	endif()
+find_program(CLANG_TIDY_PROGRAM clang-tidy)
+if(CLANG_TIDY_PROGRAM)
+    set(CMAKE_CXX_CLANG_TIDY 
+        ${CLANG_TIDY_PROGRAM};
+        -header-filter=.*include/.*;
+        -warnings-as-errors=*;
+    )
 endif()
 
 set(COUP_HEADERS
-	include/coup_filesystem.hxx
-  include/coup_system.hxx
-  include/coup_project.hxx
-  include/coup_logger.hxx
+    include/coup_filesystem.hxx
+    include/coup_system.hxx
+    include/coup_project.hxx
+    include/coup_logger.hxx
+    include/coup_json.hxx
+    include/coup_err.hxx
 )
 
 set(COUP_SOURCES
-  src/main.cxx
-  src/coup_filesystem.cxx
-  src/coup_system.cxx
-  src/coup_project.cxx
-  src/coup_logger.cxx
+    src/main.cxx
+    src/coup_filesystem.cxx
+    src/coup_system.cxx
+    src/coup_project.cxx
+    src/coup_logger.cxx
+    src/coup_json.cxx
 )
 
 add_library(coup_lib STATIC ${COUP_SOURCES} ${COUP_HEADERS})
-
-target_include_directories(coup_lib PUBLIC 
-	${CMAKE_CURRENT_SOURCE_DIR}/include
+target_include_directories(coup_lib PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-
-add_executable(coup
-  src/main.cxx
-)
-
+add_executable(coup src/main.cxx)
 target_link_libraries(coup PRIVATE coup_lib)
 
-if(ENABLE_TESTING)
-  add_compile_definitions(ENABLE_TESTING)
-  enable_testing()
-  include(FetchContent)
-  FetchContent_Declare(
+include(FetchContent)
+FetchContent_Declare(
+    json
+    URL
+    https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
+)
+FetchContent_MakeAvailable(json)
+target_link_libraries(coup PRIVATE nlohmann_json::nlohmann_json)
+
+enable_testing()
+FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG v1.14.0
-  )
-
-  FetchContent_MakeAvailable(googletest)
-  add_executable(coup_tests
+)
+FetchContent_MakeAvailable(googletest)
+add_executable(coup_tests
     tests/filesystem_test.cxx
-  )
-  target_link_libraries(coup_tests PRIVATE
+    tests/json_test.cxx
+)
+target_link_libraries(coup_tests PRIVATE
     GTest::gtest_main
     GTest::gtest
+    nlohmann_json::nlohmann_json
     coup_lib
-  )
-  include(GoogleTest)
-  gtest_discover_tests(coup_tests)
-endif()
+)
+include(GoogleTest)
+gtest_discover_tests(coup_tests)
+
+target_compile_options(coup_lib PRIVATE -fno-modules-ts)
