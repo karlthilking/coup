@@ -22,260 +22,265 @@ namespace fs = std::filesystem;
 namespace coup
 {
 
-coup_project::coup_project(const fs::path &src, const fs::path &build,
-						   const fs::path &exec,
-						   const std::vector<fs::path> &source_files,
-						   const std::vector<fs::path> &object_files)
-	: src_dir(src)
-	, build_dir(build)
-	, exec_path(exec)
-	, src_files(source_files)
-	, obj_files(object_files)
-{
-}
+coup_project::coup_project(const std::vector<fs::path>& source_files_,
+                           const std::vector<fs::path>& object_files_,
+                           const std::vector<fs::path>& source_directories_,
+                           const fs::path& build_directory_,
+                           const fs::path& executable_path_,
+                           const coup_json& coup_config_)
+	: source_files(source_files_),
+      object_files(object_files_),
+      source_directories(source_directories_),
+      build_directory(build_directory_),
+      executable_path(executable_path_)
+      coup_config(coup_config_)
+{}
 
-coup_project::coup_project(fs::path &&src, fs::path &&build, fs::path &&exec,
-						   std::vector<fs::path> &&source_files,
-						   std::vector<fs::path> &&object_files) noexcept
-	: src_dir(std::move(src))
-	, build_dir(std::move(build))
-	, exec_path(std::move(exec))
-	, src_files(std::move(source_files))
-	, obj_files(std::move(object_files))
-{
-}
+coup_project::coup_project(std::vector<fs::path>&& source_files_,
+                           std::vector<fs::path>&& object_files_,
+                           std::vector<fs::path>&& source_directories_,
+                           fs::path&& build_directory_, 
+                           fs::path&& executable_path_,
+                           coup_json&& coup_config_) noexcept
+    : source_files(std::move(source_files_)),
+      object_files(std::move(object_files_)),
+      source_directories(std::move(source_directories_)),
+      build_directory(std::move(build_directory_)),
+      executable_path(std::move(executable_path_))
+      coup_config(std::move(coup_config_))
+{}
 
-/* Obtains all source, header, and object files, associated by filestem
- * Returns a coup_project instance to the caller with properly initialized
- * coup_file instances
- */
+// static function: sets up and returns initialized coup_project
+// Find root directory
+// Find coup_config.json
+// Find source directories
+// Find build directory (okay if it doesn't actually exist yet)
+// Find source files
+// Find object files (okay if they don't actually exist yet)
+// Find executable path (okay if it doesn't actually exist yet)
 coup_project coup_project::make_project()
 {
-	// throws if no root is found
-	fs::path root_dir = get_root_dir();
-	fs::path src_dir = get_src_dir(root_dir);
-	fs::path build_dir = get_out_dir(root_dir);
+    fs::path root, coup_config, build_directory, executable_path;
+    std::vector<fs::path> source_directories, source_files, object_files;
+    coup_json coup_config;
 
-	std::vector<fs::path> src_files = find_src_files(src_dir);
-	std::vector<fs::path> obj_files = find_obj_files(build_dir);
+	try {
+        root = get_root_dir();
+    } catch (const std::runtime_error& e) {
+        // log error and exit
+    }
+    
+    coup_config_path = root / "coup_config.json";
+    if (!fs::exists(coup_config_path)) {
+        throw std::runtime_error("No coup_config.json found");
+    }
+    coup_config = coup_json(coup_config_path);
+    source_directories = config.get_source_directories();
+    build_directory = config.get_build_directory();
 
-	fs::path exec_path = build_dir / "coup_exec";
+    for (const fs::path& source_directory : source_directories) {
+        assert(fs::exists(source_directory);
+        std::vector<fs::path> new_sources = find_src_files(source_directory);
+        source_files.insert(source_files.back(), new_sources.begin(), 
+                            new_sources.end());
+    }
+    object_files = find_obj_files(build_directory);
+    executable_path = build_directory / config.get_executable();
 
-	return coup_project(std::move(src_dir), std::move(build_dir),
-						std::move(exec_path), std::move(src_files),
-						std::move(obj_files));
+    return coup_project(std::move(source_files), 
+                        std::move(object_files),
+                        std::move(source_directories),
+                        std::move(build_directory),
+                        std::move(executable_path),
+                        std::move(coup_config));
 }
 
-// return source files
-std::vector<fs::path> coup_project::get_project_src_files() const noexcept
-{
-	return src_files;
-}
 
-// return obj files
-std::vector<fs::path> coup_project::get_project_obj_files() const noexcept
-{
-	return obj_files;
-}
-
-int coup_project::num_src_files() const noexcept
-{
-	return src_files.size();
-}
-
-int coup_project::num_obj_files() const noexcept
-{
-	return obj_files.size();
-}
+// Executes build step with multiple parallel workers
+// Each worker completes the following task:
+//      - Retrieves a source file
+//      - Compiles source and prints compilation log
+//      - Stores a new object file for the compiled source
+// If the function returns a string, an error has occurred and the string
+// will contain a description of the error
+// Otherwise, std::nullopt will be returned
 
 std::optional<std::string> coup_project::execute_build(bool verbose) noexcept
 {
-	/*  Locking critical sections:
-   *    - src_files: worker threads pop from src_files vector (during
-   * compilation steps)
-   *    - logging: protecting simultaneous stdout or stderr logging
-   *    - obj_files: worker threads push to obj_files vector (for linking step)
-   */
-	std::mutex src_files_mtx;
-	std::mutex log_mtx;
-	std::mutex obj_files_mtx;
+    std::vector<fs::path> source_files;
+    for (const fs::path& source_directory : source_directories) {
+        std::vector<fs::path> new_source_files = find_src_files(source_directory);
+        source_files.insert(source_files.end(), 
+                            std::make_move_iterator(new_source_files.begin()),
+                            std::make_move_iterator(new_source_files.end());
+    }
 
-	std::vector<fs::path> new_obj_files;
-	bool build_success = true;
+    // Critical sections needed locking:
+    //      - removing from source_files vector
+    //      - logging to stdout or stderr
+    //      - adding to new_object_files vector
+    std::mutex source_files_mtx
+    std::mutex ouput_log_mtx, 
+    std::mutex object_files_mtx;
 
-	std::atomic<int> log_count{ 1 };
-	int log_total = src_files.size();
+    std::vector<fs::path> object_files;
+    bool build_success = true;
+    
+    // Needed for logging messages like this: [2/8] Compiling...
+    int count = 1;
+    int total = source_files.size();
 
-	std::string error_message = "";
+    std::string error_message = "";
 
-	auto build_worker = [&]()
-	{
-		for (;;)
-		{
-			fs::path cur_src;
-			{
-				std::lock_guard<std::mutex> lock(src_files_mtx);
-				if (src_files.empty())
-				{
-					return;
-				}
-				cur_src = std::move(src_files.back());
-				src_files.pop_back();
-			}
+    // additional information used during build/compilation step
+    std::vector<std::string> compile_flags = coup_config.get_compile_flags();
+    std::string executable_name = coup_config.get_executable();
+    std::string cpp_standard = coup_config.get_cpp_version();
+    std::string compiler = coup_config.get_compiler();
 
-			std::string src_name = get_filename(cur_src.string());
-			std::string compile_command = make_compile_command(cur_src);
+    auto build_worker = [&] {
+        while (1) {
+            fs::path source_file;
+            {
+                std::lock_guard<std::mutex> lock(source_files_mtx);
+                if (source_files.empty())
+                    return;
+                source_file = std::move(source_files.back());
+                source_files.pop_back();
+            }
+            std::string source_filename = get_filename(source_file.string());
+            std::string compile_command = 
+                make_compile_command(source_file, compiler, 
+                                     cpp_standard, compile_flags);
+            {
+                std::lock_guard<std::mutex> lock(output_log_mtx);
+                print_compile(source_filename, compile_command,
+                              count++, total, verbose);
+            }
 
-			{
-				std::lock_guard<std::mutex> lock(log_mtx);
-				print_compile(src_name, compile_command, log_count.fetch_add(1),
-							  log_total, verbose);
-			}
+            if (!execute_system_call(compile_command.c_str()) {
+                {
+                    std::lock_guard<std::mutex> lock(output_log_mtx);
+                    std::string error = "Failed to compile " + source_filename;
+                    print_error(error);
+                    error_message += "\n\t" + error;
+                }
+                build_success = false;
+            } else {
+                fs::path object_file = 
+                    build_directory / replace_extension(source_filename, "o");
+                {
+                    std::lock_guard<std::mutex> lock(object_files_mtx);
+                    object_files.push_back(std::move(object_file));
+                }
+            }
+        }
+    };
+    
+    unsigned int num_threads = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads;
+    threads.reserve(num_threads);
 
-			if (!execute_system_call(compile_command.c_str()))
-			{
-				{
-					std::lock_guard<std::mutex> lock(log_mtx);
-					print_error("Failed to compile " + src_name);
-					error_message += "\n  Failed to compile " + src_name;
-				}
-				build_success = false;
-			}
-			else
-			{
-				fs::path obj_file =
-					build_dir / replace_extension(src_name, "o");
-				{
-					std::lock_guard<std::mutex> lock(obj_files_mtx);
-					new_obj_files.push_back(obj_file);
-				}
-			}
-		}
-	};
+    unsigned int i;
+    for (i = 0; i < num_threads; ++i)
+        threads.emplace_back(build_worker);
+    for (std::thread& th : threads)
+        th.join();
 
-	std::vector<std::thread> threads;
-	unsigned int num_threads = std::thread::hardware_concurrency();
-	threads.reserve(num_threads);
+    if (!build_success) {
+        assert(!error_message.empty());
+        return error_message;
+    }
 
-	for (unsigned int i{}; i < num_threads; ++i)
-	{
-		threads.emplace_back(build_worker);
-	}
-	for (std::thread &th : threads)
-	{
-		th.join();
-	}
+    std::string link_command = make_link_command(new_object_files);
+    print_link(executable, link_command, verbose);
+    
+    if (!execute_system_call(link_command.c_str()))
+        return "Linktime error";
+    else
+        return std::nullopt;
 
-	if (!build_success || new_obj_files.size() < src_files.size())
-	{
-		assert(!error_message.empty());
-		return error_message;
-	}
-
-	std::string link_command = make_link_command(new_obj_files);
-	print_link("coup_exec", link_command, verbose);
-
-	if (!execute_system_call(link_command.c_str()))
-	{
-		return "Failed to link object files to create coup_exec";
-	}
-	else
-	{
-		return std::nullopt;
-	}
 }
 
-std::optional<std::string> coup_project::execute_run() noexcept
+std::optional<std::string> coup_project::execute_run(bool verbose) noexcept
 {
-	if (!fs::exists(exec_path))
-	{
-		return "No executable found, build your project to create one";
-	}
-	else if (!run(exec_path))
-	{
-		return "Failed to run coup_exec";
-	}
-	else
-	{
-		return std::nullopt;
-	}
+    std::string executable_name = coup_config.get_executable();
+    fs::path executable = build_directory / executable_name;
+
+    if (!fs::exists(executable)) {
+        std::optional<std::string> build_resuilt = execute_build(verbose);
+        if (build_result.has_value())
+            return "Failure during build process\n" + *build_result;
+    }
+
+    if (!run(executable)) {
+        return "Failed to run " + executable_name;
+    } else {
+        return std::nullopt;
+    }
 }
 
 std::optional<std::string> coup_project::execute_clean(bool verbose) noexcept
 {
-	if (fs::exists(exec_path))
-	{
-		obj_files.push_back(exec_path);
-	}
+    std::vector<fs::path> build_files = find_obj_files(build_directory);
+    fs::path executable = build_directory / coup_config.get_executable();
+    if (fs::exists(executable))
+        build_files.push_back(std::move(executable));
+    
+    std::mutex object_files_mtx;
+    std::mutex output_log_mtx;
+    bool clean_success = true;
 
-	std::mutex obj_files_mtx;
-	std::mutex log_mtx;
-	bool clean_success = true;
+    int count = 1;
+    int total = object_files.size();
 
-	std::atomic<int> log_count{ 1 };
-	int log_total = obj_files.size();
+    std::string error_message = "";
 
-	std::string error_message = "";
+    auto clean_worker = [&] {
+        while (1) {
+            fs::path object_file;
+            {
+                std::lock_guard<std::mutex> lock(object_files_mtx);
+                if (object_files.empty())
+                    return;
+                object_file = std::move(object_files.back());
+                object_files.pop_back();
+            }
+            std::string object_filename = get_filename(object_file.string());
+            std::string rm_command = make_syustem_command("rm", object_file);
+            {
+                std::lock_guard<std::mutex> lock(output_log_mtx);
+                print_remove(object_filename, rm_command, count, total, verbose);
+            }
 
-	auto clean_worker = [&]()
-	{
-		for (;;)
-		{
-			fs::path cur_file;
-			{
-				std::lock_guard<std::mutex> lock(obj_files_mtx);
-				if (obj_files.empty())
-				{
-					return;
-				}
-				cur_file = obj_files.back();
-				obj_files.pop_back();
-			}
+            if (!execute_system_call(rm_command.c_str())) {
+                std::string error = "Failed to remove " + object_filename;
+                {
+                    std::lock_guard<std::mutex> lock(output_log_mtx);
+                    print_error(error);
+                    error_message += error + '\n';
+                }
+                clean_success = false;
+            }
+        }
+    };
 
-			std::string obj_name = get_filename(cur_file.string());
-			std::string rm_command = make_system_command("rm", cur_file);
+    unsigned int num_threads = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads;
+    threads.reserve(num_threads);
 
-			{
-				std::lock_guard<std::mutex> lock(log_mtx);
-				print_remove(obj_name, rm_command, log_count.fetch_add(1),
-							 log_total, verbose);
-			}
+    unsigned int i;
+    for (i = 0; i < num_threads; ++i)
+        threads.emplace_back(clean_worker);
+    for (std::thread& th : threads)
+        th.join();
 
-			if (!execute_system_call(rm_command.c_str()))
-			{
-				{
-					std::lock_guard<std::mutex> lock(log_mtx);
-					print_error("Failed to remove " + obj_name);
-					error_message += "\nFailed to remove " + obj_name;
-				}
-				clean_success = false;
-			}
-		}
-	};
-
-	unsigned int num_threads = std::thread::hardware_concurrency();
-	std::vector<std::thread> threads;
-	threads.reserve(num_threads);
-
-	for (unsigned int i{}; i < num_threads; ++i)
-	{
-		threads.emplace_back(clean_worker);
-	}
-
-	for (std::thread &th : threads)
-	{
-		th.join();
-	}
-
-	if (!clean_success || obj_files.size() > 0)
-	{
-		assert(!error_message.empty());
-		return error_message;
-	}
-	else
-	{
-		return std::nullopt;
-	}
+    if (!clean_success) {
+        assert(!error_message.empty());
+        return error_message;
+    } else {
+        return std::nullopt;
+    }
 }
 
 /*  Calls execution function corresponding to string command argument
@@ -292,7 +297,8 @@ void coup_project::execute_command(const std::string &command,
 
 	if (command == "build")
 	{
-		result = execute_build(option == "verbose");
+		result = execute_build(option == "--verbose" ||
+                               option == "-v");
 	}
 	else if (command == "run")
 	{
@@ -300,7 +306,8 @@ void coup_project::execute_command(const std::string &command,
 	}
 	else if (command == "clean")
 	{
-		result = execute_clean(option == "verbose");
+		result = execute_clean(option == "--verbose" ||
+                               option == "-v");
 	}
 	else
 	{
