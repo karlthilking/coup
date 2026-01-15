@@ -8,18 +8,22 @@
 #include <stdexcept>
 #include <string>
 
-#define REQUIRED                        \
-  "Required\n\t\"cpp\" (c++ version)"   \
-  "\n\t\"source\" (source directories)" \
-  "\n\t\"build\" (build directory)"
+#define REQUIRED                          \
+	"Required\n\t\"cpp\" (c++ version)"   \
+	"\n\t\"source\" (source directories)" \
+	"\n\t\"build\" (build directory)"
 
-#define MISSING_CONFIG            \
-  "No coup_config.json found in " \
-  "root directory"
+#define MISSING_CONFIG              \
+	"No coup_config.json found in " \
+	"root directory"
 
-#define MISSING_FIELDS           \
-  "Required fields are missing " \
-  "from coup_config.json\n" REQUIRED
+#define MISSING_FIELDS             \
+	"Required fields are missing " \
+	"from coup_config.json\n" REQUIRED
+
+#define CPP_PATH "/usr/bin/c++"
+
+#define EXE "a.out"
 
 namespace fs = std::filesystem;
 namespace coup
@@ -32,26 +36,28 @@ namespace coup
 
 bool coup_json::meets_required() const noexcept
 {
-  if (!(config.contains("cpp") && config.contains("source") &&
-        config.contains("build")))
-  {
-    return false;
-  }
-  else
-  {
-    return true;
-  }
+	if (!(config.contains("cpp") && config.contains("source") &&
+		  config.contains("build")))
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
 }
 
 // Throw an error related to an issue with
 // coup_config.json
 
-[[noreturn]] void coup_json::config_error(const char* e)
+[[noreturn]] void coup_json::config_error(const char *e)
 {
-  throw std::runtime_error(e);
+	throw std::runtime_error(e);
 }
 
-coup_json::coup_json() : config(nlohmann::json{}), compile_flags({})
+coup_json::coup_json()
+	: config(nlohmann::json{})
+	, compile_flags({})
 {
 }
 
@@ -63,58 +69,59 @@ coup_json::coup_json() : config(nlohmann::json{}), compile_flags({})
 //      - The minimum required fields are not specified
 //        in the config file
 
-coup_json::coup_json(const fs::path& config_file) : compile_flags({})
+coup_json::coup_json(const fs::path &config_file)
+	: compile_flags({})
 {
-  if (!fs::exists(config_file))
-    config_error(MISSING_CONFIG);
+	if (!fs::exists(config_file))
+		config_error(MISSING_CONFIG);
 
-  std::ifstream input(config_file);
-  input >> config;
+	std::ifstream input(config_file);
+	input >> config;
 
-  if (!meets_required())
-    config_error(MISSING_FIELDS);
+	if (!meets_required())
+		config_error(MISSING_FIELDS);
 
-  if (config.contains("compile_flags"))
-    compile_flags = config["compile_flags"];
+	if (config.contains("compile_flags"))
+		compile_flags = config["compile_flags"];
 }
 
 std::string coup_json::get_cpp_version() const noexcept
 {
-  // If field "cpp" is not defined in coup_config.json
-  // an error should have already been thrown
-  assert(config.contains("cpp"));
+	// If field "cpp" is not defined in coup_config.json
+	// an error should have already been thrown
+	assert(config.contains("cpp"));
 
-  return config["cpp"];
+	return config["cpp"];
 }
 
 std::string coup_json::get_compiler() const noexcept
 {
-  return get_entry_or("compiler", std::string("/usr/bin/c++"));
+	return get_entry_or("compiler", std::string(CPP_PATH));
 }
 
 std::string coup_json::get_executable() const noexcept
 {
-  return get_entry_or("executable", std::string("a.out"));
+	return get_entry_or("executable", std::string(EXE));
 }
 
 std::vector<std::string> coup_json::get_source_directories() const noexcept
 {
-  return config["source"];
+	return config["source"];
 }
 
 std::string coup_json::get_build_directory() const noexcept
 {
-  return config["build"];
+	return config["build"];
 }
 
 std::vector<std::string> coup_json::get_compile_flags() const noexcept
 {
-  return compile_flags;
+	return compile_flags;
 }
 
 std::string coup_json::dump(int tab_width) const noexcept
 {
-  return config.dump(tab_width);
+	return config.dump(tab_width);
 }
 
-}  // namespace coup
+} // namespace coup
