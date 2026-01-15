@@ -8,7 +8,7 @@ Goals
 -----
 * Provide easy-to-use and out-the-box functionality.
 * No DSL for setting up projects, simple JSON, a familiar and readable format.
-* Efficiency: compilation steps should be very quick by utilizing the avaiable hardware.
+* Efficiency: compilation steps should be very quick by utilizing the available hardware.
 * Informative logging to provide clear insight into every step during the build process.
 * Flexibility: coup should be able to service any c++ project's demands
 
