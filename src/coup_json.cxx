@@ -21,30 +21,21 @@
 	"Required fields are missing " \
 	"from coup_config.json\n" REQUIRED
 
-#define CPP_PATH "/usr/bin/c++"
+#define CPP_PATH   "/usr/bin/c++"
 
-#define EXE "a.out"
+#define EXE        "a.out"
 
 namespace fs = std::filesystem;
 namespace coup
 {
 
-// Fields requiring definition in coup_config.json
-//      - cpp (c++ version: i.e. c++14, c++20, etc)
-//      - source (list of directories marked as source)
-//      - build (build directory)
 
 bool coup_json::meets_required() const noexcept
 {
-	if (!(config.contains("cpp") && config.contains("source") &&
-		  config.contains("build")))
-	{
+	if (!config_contains("source")) 
 		return false;
-	}
 	else
-	{
 		return true;
-	}
 }
 
 // Throw an error related to an issue with
@@ -56,10 +47,8 @@ bool coup_json::meets_required() const noexcept
 }
 
 coup_json::coup_json()
-	: config(nlohmann::json{})
-	, compile_flags({})
-{
-}
+	: config(nlohmann::json{}),
+{}
 
 // Initializes the only class member (json object)
 // with coup_config.json that should be in the project's
@@ -70,7 +59,6 @@ coup_json::coup_json()
 //        in the config file
 
 coup_json::coup_json(const fs::path &config_file)
-	: compile_flags({})
 {
 	if (!fs::exists(config_file))
 		config_error(MISSING_CONFIG);
@@ -80,17 +68,10 @@ coup_json::coup_json(const fs::path &config_file)
 
 	if (!meets_required())
 		config_error(MISSING_FIELDS);
-
-	if (config.contains("compile_flags"))
-		compile_flags = config["compile_flags"];
 }
 
 std::string coup_json::get_cpp_version() const noexcept
 {
-	// If field "cpp" is not defined in coup_config.json
-	// an error should have already been thrown
-	assert(config.contains("cpp"));
-
 	return config["cpp"];
 }
 
@@ -104,7 +85,8 @@ std::string coup_json::get_executable() const noexcept
 	return get_entry_or("executable", std::string(EXE));
 }
 
-std::vector<std::string> coup_json::get_source_directories() const noexcept
+std::vector<std::string> 
+coup_json::get_source_directories() const noexcept
 {
 	return config["source"];
 }
@@ -114,14 +96,21 @@ std::string coup_json::get_build_directory() const noexcept
 	return config["build"];
 }
 
-std::vector<std::string> coup_json::get_compile_flags() const noexcept
+const std::vector<std::string>&
+coup_json::get_compile_flags() const noexcept
 {
-	return compile_flags;
+    std::vector<std::string> compile_flags;
+	return get_entry_or("compile_flags", compile_flags);
 }
 
 std::string coup_json::dump(int tab_width) const noexcept
 {
 	return config.dump(tab_width);
+}
+
+bool coup_json::contains(const char *key) const noexcept
+{
+    return config.contains(key);
 }
 
 } // namespace coup

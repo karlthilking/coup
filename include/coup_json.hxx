@@ -11,13 +11,8 @@ class coup_json
 {
 private:
 	nlohmann::json config;
-
-	// Compile flags will be needed for each individual
-	// source compilation, so it is logical to store it
-	// instead of continuously retrieving from json object
-	std::vector<std::string> compile_flags;
-
-	// Helper function for getting retrieving the value
+	
+    // Helper function for getting retrieving the value
 	// associated with a certain field in coup_config.json
 	// If the field is defined, return the associated value
 	// or else return a fallback default value
@@ -51,5 +46,7 @@ public:
 	std::vector<std::string> get_compile_flags() const noexcept;
 
 	std::string dump(int tab_width) const noexcept;
+
+    bool contains(const char *key) const noexcept;
 };
 } // namespace coup
