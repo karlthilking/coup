@@ -31,7 +31,12 @@ private:
 
 public:
 	coup_json();
-	coup_json(const fs::path &config_file);
+    ~coup_json();
+    coup_json(const fs::path& config_file);
+    coup_json(const coup_json& other);
+    coup_json(coup_json&& other) noexcept;
+    coup_json& operator=(const coup_json& other);
+    coup_json& operator=(coup_json&& other) noexcept;
 
 	std::string get_cpp_version() const noexcept;
 

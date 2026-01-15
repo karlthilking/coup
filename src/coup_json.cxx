@@ -21,15 +21,13 @@
 	"Required fields are missing " \
 	"from coup_config.json\n" REQUIRED
 
-#define CPP_PATH   "/usr/bin/c++"
+#define CPP_PATH "/usr/bin/c++"
 
-#define EXE        "a.out"
+#define EXE "a.out"
 
 namespace fs = std::filesystem;
 namespace coup
 {
-
-
 bool coup_json::meets_required() const noexcept
 {
 	if (!config_contains("source")) 
@@ -45,10 +43,6 @@ bool coup_json::meets_required() const noexcept
 {
 	throw std::runtime_error(e);
 }
-
-coup_json::coup_json()
-	: config(nlohmann::json{}),
-{}
 
 // Initializes the only class member (json object)
 // with coup_config.json that should be in the project's
@@ -68,6 +62,38 @@ coup_json::coup_json(const fs::path &config_file)
 
 	if (!meets_required())
 		config_error(MISSING_FIELDS);
+}
+
+// default constructor
+coup_json::coup_json() = default;
+
+// destructor
+coup_json::~coup_json() = default;
+
+// copy constructor
+coup_json::coup_json(const coup_json& other)
+    : config(other.config)
+{}
+
+// move constructor
+coup_json::coup_json(coup_json&& other) noexcept
+    : config(std::move(other.config))
+{}
+
+// copy-assignment operator
+coup_json& coup_json::operator=(const coup_json& other)
+{
+    if (this != &other)
+        config = other.config;
+    return *this;
+}
+
+// move-assignment operator
+coup_json& coup_json::operator=(coup_json&& other) noexcept
+{
+    if (this != &other)
+        config = std::move(other.config);
+    return *this;
 }
 
 std::string coup_json::get_cpp_version() const noexcept
