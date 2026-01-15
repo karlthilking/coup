@@ -1,0 +1,6 @@
+{
+    "cpp": "c++20",
+    "compiler": "gcc",
+    "source_directories": ["src"],
+    "build_directories": ["build"]
+}
