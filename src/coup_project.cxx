@@ -1,3 +1,4 @@
+/* coup_project.cxx */
 #include "../include/coup_project.hxx"
 
 #include <algorithm>
@@ -185,7 +186,7 @@ std::optional<std::string> coup_project::execute_build(bool verbose) noexcept
   }
 }
 
-std::optional<std::string> coup_project::execute_run(bool verbose) noexcept
+std::optional<std::string> coup_project::execute_run() noexcept
 {
   if (!fs::exists(exec_path))
   {
@@ -297,7 +298,7 @@ void coup_project::execute_command(const std::string& command,
   }
   else if (command == "run")
   {
-    result = execute_run(option == "verbose");
+    result = execute_run();
   }
   else if (command == "clean")
   {

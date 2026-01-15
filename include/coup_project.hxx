@@ -64,7 +64,7 @@ class coup_project
    *  Returns nullopt if the executable runs, or an error
    *  message if running fails
    */
-  std::optional<std::string> execute_run(bool verbose) noexcept;
+  std::optional<std::string> execute_run() noexcept;
 
   /*  Removes all build artifacts from project
    *  Verbose parameter indicates verbose log output option
