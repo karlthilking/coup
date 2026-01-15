@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace fs = std::filesystem;
-namespace coup 
+namespace coup
 {
 
 class coup_project
@@ -21,9 +21,7 @@ class coup_project
   /*  Privately accessed constructors, only accessed
    *  directly by the make_project function
    */
-  coup_project(const fs::path& src, 
-               const fs::path& build,
-               const fs::path& exec,
+  coup_project(const fs::path& src, const fs::path& build, const fs::path& exec,
                const std::vector<fs::path>& source_files,
                const std::vector<fs::path>& object_files);
 

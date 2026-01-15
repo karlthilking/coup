@@ -19,15 +19,16 @@ int main(int argc, char* argv[])
 
   std::string command = argv[1];
   std::string option;
-  if (argc > 2) {
+  if (argc > 2)
+  {
     option = argv[2];
   }
 
   coup_project proj = coup_project::make_project();
-  try 
+  try
   {
     proj.execute_command(command, option);
-  } 
+  }
   catch (const std::exception& e)
   {
     print_usage();

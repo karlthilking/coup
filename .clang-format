@@ -1,6 +1,6 @@
 BasedOnStyle: Google
 
-BreakBeforeBraces: Custom
+BreakBeforeBraces: Allman
 BraceWrapping:
   AfterCaseLabel: true
   AfterClass: true
@@ -70,5 +70,5 @@ SpacesInContainerLiterals: true
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 Standard: Auto
-TabWidth: 2
+TabWidth: 4
 UseTab: Never

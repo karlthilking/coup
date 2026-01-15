@@ -9,7 +9,8 @@
 #include <vector>
 
 namespace fs = std::filesystem;
-namespace coup {
+namespace coup
+{
 // return value or throw runtime error
 template <typename T>
 inline T unwrap_or_throw(std::optional<T> opt)

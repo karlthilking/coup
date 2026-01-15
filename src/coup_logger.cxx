@@ -1,26 +1,31 @@
-#include <stdexcept>
-#include <string_view>
-#include <filesystem>
-#include <iostream>
-#include <cassert>
-#include <string>
-#include "../include/coup_filesystem.hxx"
-#include "../include/coup_system.hxx"
 #include "../include/coup_logger.hxx"
 
+#include <cassert>
+#include <filesystem>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+
+#include "../include/coup_filesystem.hxx"
+#include "../include/coup_system.hxx"
+
 namespace fs = std::filesystem;
-namespace coup {
+namespace coup
+{
 
 /*  Print message explanation user to the user if:
  *    - user provides no arguments
  *    - user provides an invalid argument
  */
-void print_usage() {
-  std::cerr << "Usage: ./coup <command> <option>\nCommands:\n"
-    << "  build: Compile and link source files into executable\n"
-    << "  run: Complete build step and run executable\n"
-    << "  clean: Remove build artifacts\n"
-    << "Options:\n  verbose: Enable verbose ouput during command execution\n";
+void print_usage()
+{
+  std::cerr
+      << "Usage: ./coup <command> <option>\nCommands:\n"
+      << "  build: Compile and link source files into executable\n"
+      << "  run: Complete build step and run executable\n"
+      << "  clean: Remove build artifacts\n"
+      << "Options:\n  verbose: Enable verbose ouput during command execution\n";
 }
 
 // Error logging for generally occuring errors
@@ -33,16 +38,17 @@ void print_error(const std::string& error_message)
  *  If verbose output is enabled, provide compilation count and total,
  *  and display compile command
  */
-void print_compile(std::string_view src_name,
-                   std::string_view compile_command,
-                   int log_count, int log_total,
-                   bool verbose_output)
+void print_compile(std::string_view src_name, std::string_view compile_command,
+                   int log_count, int log_total, bool verbose_output)
 {
-  if (verbose_output) {
-    std::cout << "[" << log_count++ << "/" << log_total 
-      << "] Compiling " << src_name << "\n"
-      << "  $ " << compile_command << "\n";
-  } else {
+  if (verbose_output)
+  {
+    std::cout << "[" << log_count++ << "/" << log_total << "] Compiling "
+              << src_name << "\n"
+              << "  $ " << compile_command << "\n";
+  }
+  else
+  {
     std::cout << "Compiling " << src_name << "\n";
   }
 }
@@ -50,14 +56,15 @@ void print_compile(std::string_view src_name,
 /*  Print log message indicating a linkage step occuring
  *  If verbose output is enabled, provide link command used
  */
-void print_link(const std::string& exec_name,
-                std::string_view link_command,
+void print_link(const std::string& exec_name, std::string_view link_command,
                 bool verbose_output)
 {
-  if (verbose_output) {
-    std::cout << "Linking " << exec_name << "\n  $ "
-      << link_command << "\n";
-  } else {
+  if (verbose_output)
+  {
+    std::cout << "Linking " << exec_name << "\n  $ " << link_command << "\n";
+  }
+  else
+  {
     std::cout << "Linking " << exec_name << "\n";
   }
 }
@@ -66,16 +73,17 @@ void print_link(const std::string& exec_name,
  *  If verbose output is enabled, provide current removed out of total
  *  file removals, and provide remove command used to delete file
  */
-void print_remove(std::string_view file_name,
-                  std::string_view rm_command,
-                  int log_count, int log_total,
-                  bool verbose_output) 
+void print_remove(std::string_view file_name, std::string_view rm_command,
+                  int log_count, int log_total, bool verbose_output)
 {
-  if (verbose_output) {
-    std::cout << "[" << log_count++ << "/" << log_total 
-              << "] Removing " << file_name << "\n";
+  if (verbose_output)
+  {
+    std::cout << "[" << log_count++ << "/" << log_total << "] Removing "
+              << file_name << "\n";
     std::cout << "  $ " << rm_command << "\n";
-  } else {
+  }
+  else
+  {
     std::cout << "Removing " << file_name << "\n";
   }
 }
@@ -83,8 +91,7 @@ void print_remove(std::string_view file_name,
 /*  Determine which command executed successfully and delegate
  *  logging to the matching function
  */
-void
-print_result_success(std::string_view command, double runtime) 
+void print_result_success(std::string_view command, double runtime)
 {
   if (command == "build")
   {
@@ -93,7 +100,7 @@ print_result_success(std::string_view command, double runtime)
   else if (command == "run")
   {
     print_run_success(runtime);
-  } 
+  }
   else if (command == "clean")
   {
     print_clean_success(runtime);
@@ -101,16 +108,14 @@ print_result_success(std::string_view command, double runtime)
   else
   {
     // should never reach this branch
-    assert(false && 
-           "print_result_success received invalid command");
+    assert(false && "print_result_success received invalid command");
   }
 }
 
 /*  Determine which command failed and delegate logging to matching function
  */
-void
-print_result_failure(std::string_view command,
-                     const std::string& error_message)
+void print_result_failure(std::string_view command,
+                          const std::string& error_message)
 {
   if (command == "build")
   {
@@ -156,13 +161,13 @@ void print_run_failure(const std::string& error_message)
 }
 
 // log clean success
-void print_clean_success(double runtime) 
+void print_clean_success(double runtime)
 {
   std::cout << "Clean succeeded in " << runtime << "s\n";
 }
 
 // log clean failure
-void print_clean_failure(const std::string& error_message) 
+void print_clean_failure(const std::string& error_message)
 {
   std::cout << "Clean failed: " << error_message << "\n";
 }

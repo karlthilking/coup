@@ -19,10 +19,10 @@
 #include "../include/coup_system.hxx"
 
 namespace fs = std::filesystem;
-namespace coup {
+namespace coup
+{
 
-coup_project::coup_project(const fs::path& src, 
-                           const fs::path& build,
+coup_project::coup_project(const fs::path& src, const fs::path& build,
                            const fs::path& exec,
                            const std::vector<fs::path>& source_files,
                            const std::vector<fs::path>& object_files)
@@ -34,9 +34,7 @@ coup_project::coup_project(const fs::path& src,
 {
 }
 
-coup_project::coup_project(fs::path&& src, 
-                           fs::path&& build, 
-                           fs::path&& exec, 
+coup_project::coup_project(fs::path&& src, fs::path&& build, fs::path&& exec,
                            std::vector<fs::path>&& source_files,
                            std::vector<fs::path>&& object_files) noexcept
     : src_dir(std::move(src)),
@@ -90,7 +88,6 @@ int coup_project::num_obj_files() const noexcept
   return obj_files.size();
 }
 
-
 std::optional<std::string> coup_project::execute_build(bool verbose) noexcept
 {
   /*  Locking critical sections:
@@ -111,7 +108,8 @@ std::optional<std::string> coup_project::execute_build(bool verbose) noexcept
 
   std::string error_message = "";
 
-  auto build_worker = [&]() {
+  auto build_worker = [&]()
+  {
     for (;;)
     {
       fs::path cur_src;
@@ -204,7 +202,7 @@ std::optional<std::string> coup_project::execute_run() noexcept
 
 std::optional<std::string> coup_project::execute_clean(bool verbose) noexcept
 {
-  if (fs::exists(exec_path)) 
+  if (fs::exists(exec_path))
   {
     obj_files.push_back(exec_path);
   }
@@ -218,8 +216,8 @@ std::optional<std::string> coup_project::execute_clean(bool verbose) noexcept
 
   std::string error_message = "";
 
-
-  auto clean_worker = [&]() {
+  auto clean_worker = [&]()
+  {
     for (;;)
     {
       fs::path cur_file;
@@ -238,9 +236,8 @@ std::optional<std::string> coup_project::execute_clean(bool verbose) noexcept
 
       {
         std::lock_guard<std::mutex> lock(log_mtx);
-        print_remove(obj_name, rm_command,
-                     log_count.fetch_add(1),
-                     log_total, verbose);
+        print_remove(obj_name, rm_command, log_count.fetch_add(1), log_total,
+                     verbose);
       }
 
       if (!execute_system_call(rm_command.c_str()))

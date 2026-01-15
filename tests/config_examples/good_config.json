@@ -1,0 +1,10 @@
+{
+    "cpp": "c++20",
+    "compiler": "gcc",
+    "source": ["src"],
+    "build": "build",
+    "executable": "my_project",
+    "compile_flags": [
+        "-Wall", "-Wextra", "-Wpedantic"
+    ]
+}

@@ -9,7 +9,8 @@
 #include "coup_project.hxx"
 
 namespace fs = std::filesystem;
-namespace coup {
+namespace coup
+{
 // executing system calls
 bool execute_system_call(const char* command);
 

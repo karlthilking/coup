@@ -10,7 +10,8 @@
 #include <vector>
 
 namespace fs = std::filesystem;
-namespace coup {
+namespace coup
+{
 
 // returns optional returning root project directory or null
 std::optional<fs::path> get_root_dir_opt(const fs::path& p)
